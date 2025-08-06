@@ -22,3 +22,7 @@ gcloud run deploy biwenger-summary \
   --region europe-southwest1 \
   --allow-unauthenticated \
   --set-env-vars="COMUNICADOS_CSV_URL=https://drive.google.com/uc?export=download&id=1t-yv13NPpuuhrbUUIJwoNYI0FSrsYS_q,PALMARES_CSV_URL=https://drive.google.com/uc?export=download&id=1cbXiUUo1RTG-6tlI0kK6tEx-DezfBAty"
+
+
+url:
+  https://biwenger-summary-pjpqofuevq-no.a.run.app/
