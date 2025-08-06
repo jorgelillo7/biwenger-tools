@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Comunicados Oficiales{% endblock %}
+
+{% block content %}
+    <!-- Barra de búsqueda para filtrar -->
+    <div class="mb-8">
+        <input type="text" id="search-input" placeholder="Buscar por título, autor o contenido..." 
+               class="w-full p-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-800">
+    </div>
+
+    <!-- Contenedor de los mensajes -->
+    <div id="messages-container" class="space-y-6">
+        {% if error %}
+            <div class="card p-6 text-center text-red-500">{{ error }}</div>
+        {% elif messages %}
+            {% for message in messages %}
+            <article class="message-card card p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 message-title">{{ message.titulo }}</h2>
+                        <p class="text-sm font-medium text-green-700 mt-1 message-author">por {{ message.autor }}</p>
+                    </div>
+                    <span class="text-sm text-gray-500 text-right flex-shrink-0 ml-4">{{ message.fecha }}</span>
+                </div>
+                <div class="prose max-w-none leading-relaxed message-content">
+                    {{ message.contenido | safe }}
+                </div>
+            </article>
+            {% endfor %}
+        {% else %}
+            <div class="card p-6 text-center">
+                <h3 class="text-xl font-medium">No hay comunicados que mostrar.</h3>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Script para el filtrado en tiempo real
+        const searchInput = document.getElementById('search-input');
+        const messageCards = document.getElementsByClassName('message-card');
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+
+            for (let card of messageCards) {
+                const title = card.querySelector('.message-title').textContent.toLowerCase();
+                const author = card.querySelector('.message-author').textContent.toLowerCase();
+                const content = card.querySelector('.message-content').textContent.toLowerCase();
+
+                if (title.includes(searchTerm) || author.includes(searchTerm) || content.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            }
+        });
+    </script>
+{% endblock %}

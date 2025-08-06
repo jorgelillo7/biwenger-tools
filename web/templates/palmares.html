@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Palmarés Histórico{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    {% if error %}
+        <div class="card p-6 text-center text-red-500">{{ error }}</div>
+    {% elif seasons %}
+        {% for season, data in seasons %}
+        <div class="card p-6 rounded-xl shadow-lg">
+            <h2 class="font-header text-3xl font-bold text-gray-900 mb-6 border-b border-gray-300 pb-3">{{ season }}</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Columna de podio -->
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <span class="text-4xl mr-4">🥇</span>
+                        <div>
+                            <p class="font-bold text-xl text-gray-800">{{ data.campeon }}</p>
+                            <p class="text-sm text-gray-500">Campeón</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-4xl mr-4">🥈</span>
+                        <div>
+                            <p class="font-bold text-xl text-gray-800">{{ data.subcampeon }}</p>
+                            <p class="text-sm text-gray-500">Subcampeón</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-4xl mr-4">🥉</span>
+                        <div>
+                            <p class="font-bold text-xl text-gray-800">{{ data.tercero }}</p>
+                            <p class="text-sm text-gray-500">Tercer Puesto</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Columna de otros datos -->
+                <div class="space-y-4">
+                    <h3 class="font-header text-xl font-bold text-green-700">Datos de la Temporada</h3>
+                    <p><strong class="font-medium text-gray-600">Puntuación:</strong> {{ data.puntuacion }}</p>
+                    <p><strong class="font-medium text-gray-600">Récord de Puntos:</strong> {{ data.record_puntos }}</p>
+                    <p><strong class="font-medium text-gray-600">Más Jornadas Ganadas:</strong> {{ data.jornadas_ganadas }}</p>
+                    
+                    <h3 class="font-header text-xl font-bold text-red-600 mt-6">Les toca pagar a:</h3>
+                    <ul class="list-none space-y-2">
+                        {% for otro in data.otros %}
+                            <li>
+                                <span class="inline-block w-6 text-center">
+                                {% if otro.tipo == 'farolillo' %}🔴{% endif %}
+                                </span>
+                                {{ otro.valor }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-center card p-6">No hay datos del palmarés disponibles.</p>
+    {% endif %}
+</div>
+{% endblock %}
