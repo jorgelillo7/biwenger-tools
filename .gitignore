@@ -1,0 +1,15 @@
+# Archivo de entorno - Contiene credenciales sensibles
+.env
+
+# Archivos de credenciales de Google OAuth 2.0 - No subir nunca
+token.json
+client_secrets.json
+
+# Entorno virtual de Python
+venv/
+__pycache__/
+*.pyc
+
+# Archivos del sistema operativo (macOS, Windows)
+.DS_Store
+Thumbs.db
