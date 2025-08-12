@@ -84,6 +84,17 @@ gcloud run jobs create biwenger-scraper-data \
   --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
 
 
+
+gcloud run jobs update biwenger-scraper-data \
+  --image gcr.io/biwenger-tools/scraper-job \
+  --region europe-southwest1 \
+  --set-secrets="/gdrive_client/client_secrets.json=client_secrets_json:latest" \
+  --set-secrets="/gdrive_token/token.json=token_json:latest" \
+  --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \
+  --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest" \
+  --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
+
+
   gcloud run jobs execute biwenger-scraper-data --region europe-southwest1
 
 

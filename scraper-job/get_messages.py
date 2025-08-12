@@ -94,24 +94,17 @@ def categorize_title(title):
     return "comunicado"
 
 def process_participation(all_messages, user_map):
-    """Procesa la lista de todos los mensajes y genera los datos de participación, incluyendo a todos los usuarios de la liga."""
-    # Inicializa la participación con todos los usuarios de la liga.
     participation = {
         name: {"comunicado": [], "dato": [], "cesion": []}
         for name in user_map.values()
     }
-
-    # Rellena con los mensajes existentes
     for msg in all_messages:
         author = msg.get('autor')
         category = msg.get('categoria')
         msg_id = msg.get('id_hash')
-        # Nos aseguramos de que el autor está en nuestro diccionario de participación
         if author and category and msg_id and author in participation:
             if msg_id not in participation[author][category]:
                 participation[author][category].append(msg_id)
-
-    # Convertimos a formato de salida para el CSV
     output_data = []
     for author, categories in participation.items():
         output_data.append({
@@ -185,13 +178,19 @@ def main():
     biwenger_email = read_secret_from_file(config.BIWENGER_EMAIL_PATH) or config.BIWENGER_EMAIL
     biwenger_password = read_secret_from_file(config.BIWENGER_PASSWORD_PATH) or config.BIWENGER_PASSWORD
     
-    if not biwenger_email or not biwenger_password:
-        print("⚠️ ¡Error! No se pudieron leer las credenciales de Biwenger.")
+    gdrive_folder_id = read_secret_from_file(config.GDRIVE_FOLDER_ID_PATH)
+    if not gdrive_folder_id:
+        print("ℹ️  No se encontró el secreto de gdrive_folder_id, leyendo de .env local...")
+        gdrive_folder_id = os.getenv("GDRIVE_FOLDER_ID")
+
+
+    if not all([biwenger_email, biwenger_password, gdrive_folder_id]):
+        print("⚠️ ¡Error! No se pudieron leer todas las credenciales necesarias.")
         return
         
     try:
         service = get_gdrive_service_oauth()
-        comunicados_file = find_file_on_drive(service, config.COMUNICADOS_FILENAME, config.GDRIVE_FOLDER_ID)
+        comunicados_file = find_file_on_drive(service, config.COMUNICADOS_FILENAME, gdrive_folder_id)
         
         all_messages = []
         existing_ids = set()
@@ -240,16 +239,15 @@ def main():
             writer_comunicados = csv.DictWriter(output_comunicados, fieldnames=['id_hash', 'fecha', 'autor', 'titulo', 'contenido', 'categoria'])
             writer_comunicados.writeheader()
             writer_comunicados.writerows(all_messages)
-            upload_csv_to_drive(service, config.GDRIVE_FOLDER_ID, config.COMUNICADOS_FILENAME, output_comunicados.getvalue(), comunicados_file)
+            upload_csv_to_drive(service, gdrive_folder_id, config.COMUNICADOS_FILENAME, output_comunicados.getvalue(), comunicados_file)
 
-            # Se pasa el user_map para asegurar que todos los usuarios estén presentes
             participation_data = process_participation(all_messages, user_map)
-            participation_file = find_file_on_drive(service, config.PARTICIPACION_FILENAME, config.GDRIVE_FOLDER_ID)
+            participation_file = find_file_on_drive(service, config.PARTICIPACION_FILENAME, gdrive_folder_id)
             output_part = io.StringIO()
             writer_part = csv.DictWriter(output_part, fieldnames=['autor', 'comunicados', 'datos', 'cesiones'])
             writer_part.writeheader()
             writer_part.writerows(participation_data)
-            upload_csv_to_drive(service, config.GDRIVE_FOLDER_ID, config.PARTICIPACION_FILENAME, output_part.getvalue(), participation_file)
+            upload_csv_to_drive(service, gdrive_folder_id, config.PARTICIPACION_FILENAME, output_part.getvalue(), participation_file)
         else:
             print("\n✅ No hay mensajes nuevos.")
 

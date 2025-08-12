@@ -8,8 +8,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia el script de Python
-COPY get_messages.py .
+# CORRECCIÓN: Copia TODOS los archivos del proyecto (incluido config.py) al contenedor
+COPY . .
 
 # Comando para ejecutar el script cuando el job se inicie
 CMD ["python", "get_messages.py"]
