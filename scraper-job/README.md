@@ -65,6 +65,10 @@ gcloud secrets create client_secrets_json --data-file="client_secrets.json"
 gcloud secrets create token_json --data-file="token.json"
 echo -n "XXXXX@gmail.com" | gcloud secrets create biwenger-email --data-file=-
 echo -n "XXXXX" | gcloud secrets create biwenger-password --data-file=-
+echo -n "XXXXX" | gcloud secrets create gdrive-folder-id --data-file=-
+
+update secret ->
+gcloud secrets versions add token_json --data-file="token.json"
 
 ## cloud run
 gcloud builds submit --tag gcr.io/biwenger-tools/scraper-job
@@ -76,7 +80,8 @@ gcloud run jobs create biwenger-scraper-data \
   --set-secrets="/gdrive_client/client_secrets.json=client_secrets_json:latest" \
   --set-secrets="/gdrive_token/token.json=token_json:latest" \
   --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \
-  --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest"
+  --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest" \
+  --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
 
 
   gcloud run jobs execute biwenger-scraper-data --region europe-southwest1

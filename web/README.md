@@ -2,9 +2,9 @@
 
 pip3 install Flask --break-system-packages
 
-COMUNICADOS_CSV_URL="https://drive.google.com/uc?export=download&id=1jNCSpiHpqFs7CjT4lOX5mKAVXY5u4xHP" \
+COMUNICADOS_CSV_URL="https://drive.google.com/uc?export=download&id=1On5HRJ-dz5P4gYSbyhNWfpPlrhslA8gE" \
 PALMARES_CSV_URL="https://drive.google.com/uc?export=download&id=1s1p2SmQIcq-D8pukoStTfAfh5tiYllLK" \
-PARTICIPACION_CSV_URL="https://drive.google.com/uc?export=download&id=1X9ouiR9OukI1m-AzGD2sysS5W6sD3cnD" \
+PARTICIPACION_CSV_URL="https://drive.google.com/uc?export=download&id=1ipxGNmQHPekLxakjiqAb5WFA0m8qgC4Y" \
 LIGAS_ESPECIALES_SHEET_ID="1ZaFZtKLFc0K4Ku099x3iV20OBkLZz9BEvojZpyOP0es" \
 python3 app.py
 
@@ -23,7 +23,7 @@ gcloud run deploy biwenger-summary \
   --platform managed \
   --region europe-southwest1 \
   --allow-unauthenticated \
-  --set-env-vars="COMUNICADOS_CSV_URL=https://drive.google.com/uc?export=download&id=1jNCSpiHpqFs7CjT4lOX5mKAVXY5u4xHP,PALMARES_CSV_URL=https://drive.google.com/uc?export=download&id=1s1p2SmQIcq-D8pukoStTfAfh5tiYllLK,PARTICIPACION_CSV_URL=https://drive.google.com/uc?export=download&id=1X9ouiR9OukI1m-AzGD2sysS5W6sD3cnD"
+  --set-env-vars="COMUNICADOS_CSV_URL=https://drive.google.com/uc?export=download&id=1On5HRJ-dz5P4gYSbyhNWfpPlrhslA8gE,PALMARES_CSV_URL=https://drive.google.com/uc?export=download&id=1s1p2SmQIcq-D8pukoStTfAfh5tiYllLK,PARTICIPACION_CSV_URL=https://drive.google.com/uc?export=download&id=1ipxGNmQHPekLxakjiqAb5WFA0m8qgC4Y"
 
 
 url:
