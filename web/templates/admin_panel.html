@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Administración{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Panel principal -->
+    <div class="card p-8 rounded-xl shadow-lg">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="font-header text-3xl font-bold text-gray-900">Panel de Administración (VAR)</h2>
+            <a href="{{ url_for('logout') }}" class="text-sm text-red-600 hover:underline">Cerrar Sesión</a>
+        </div>
+        <p class="text-gray-600">Desde aquí podrás ver el estado del sistema y gestionar la temporada.</p>
+    </div>
+
+    <!-- Estado de los Ficheros -->
+    <div class="card p-6 rounded-xl shadow-lg">
+        <h3 class="font-header text-2xl font-bold text-gray-800 mb-4">Estado de los Ficheros de Datos</h3>
+        {% if error %}
+            <p class="text-red-500">{{ error }}</p>
+        {% else %}
+            <div class="space-y-3">
+                {% for file in file_statuses %}
+                <div class="flex justify-between items-center p-3 rounded-md {% if file.status == 'Encontrado' %}bg-green-50{% else %}bg-red-50{% endif %}">
+                    <p class="font-medium text-gray-700">{{ file.name }}</p>
+                    <div>
+                        <span class="text-sm text-gray-500 mr-4">Última actualización: {{ file.last_updated }}</span>
+                        <span class="text-xs font-semibold px-2 py-1 rounded-full {% if file.status == 'Encontrado' %}bg-green-200 text-green-800{% else %}bg-red-200 text-red-800{% endif %}">
+                            {{ file.status }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Herramientas -->
+    <div class="card p-6 rounded-xl shadow-lg">
+        <h3 class="font-header text-2xl font-bold text-gray-800 mb-4">Herramientas</h3>
+        <div class="flex items-center">
+            <a href="{{ log_url }}" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Ver Logs del Scraper en Cloud Run
+                <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                </svg>
+            </a>
+            <p class="ml-4 text-sm text-gray-500">
+                Abre los registros de la última ejecución del job en Google Cloud. En local, este enlace te lleva a PROD
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

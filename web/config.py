@@ -6,12 +6,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- CONFIGURACIÓN (leída desde el entorno) ---
-# En local, se leen del .env. En Cloud Run, se leen de las variables de entorno del servicio.
 COMUNICADOS_CSV_URL = os.getenv('COMUNICADOS_CSV_URL')
 PARTICIPACION_CSV_URL = os.getenv('PARTICIPACION_CSV_URL')
 PALMARES_CSV_URL = os.getenv('PALMARES_CSV_URL')
 LIGAS_ESPECIALES_SHEET_ID = os.getenv('LIGAS_ESPECIALES_SHEET_ID')
+GDRIVE_FOLDER_ID = os.getenv('GDRIVE_FOLDER_ID')
+GCP_PROJECT_ID = os.getenv('GCP_PROJECT_ID')
+CLOUD_RUN_JOB_NAME = os.getenv('CLOUD_RUN_JOB_NAME')
+CLOUD_RUN_REGION = os.getenv('CLOUD_RUN_REGION', 'europe-southwest1')
+
+# --- SECRETOS DE LA APLICACIÓN ---
+SECRET_KEY = os.getenv('SECRET_KEY', 'default-dev-key')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
 
 # --- CONFIGURACIÓN NO CRÍTICA (valores fijos) ---
 MESSAGES_PER_PAGE = 7
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly', 'https://www.googleapis.com/auth/spreadsheets.readonly']
+# Nombres de los archivos que el panel de admin necesita comprobar
+COMUNICADOS_FILENAME = "biwenger_comunicados.csv"
+PARTICIPACION_FILENAME = "biwenger_participacion.csv"
+PALMARES_FILENAME = "palmares.csv"

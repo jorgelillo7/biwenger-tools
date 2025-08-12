@@ -2,6 +2,9 @@
 ### 1. Instalación de Dependencias
 ```bash
 pip3 install Flask --break-system-packages
+pip3 install python-dateutil --break-system-packages
+pip3 install pytz --break-system-packages
+
 ```
 
 ### 2. Ejecución

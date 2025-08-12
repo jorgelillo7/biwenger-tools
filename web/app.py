@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for, flash
 import csv
 import requests
 import io
@@ -7,8 +7,10 @@ import os
 import json
 from collections import defaultdict
 from datetime import datetime
+from dateutil import parser
+import pytz
 
-# Importamos toda la configuración desde nuestro nuevo archivo config.py
+# Importamos la configuración
 import config
 
 # Importaciones para Google Cloud
@@ -18,16 +20,15 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = config.SECRET_KEY
 
-# --- FUNCIONES AUXILIARES Y DE GOOGLE ---
+# --- FUNCIONES ---
 
 def get_google_service(service_name, version):
     """Función genérica para autenticar y crear un servicio de Google (Drive o Sheets)."""
     creds = None
     if os.path.exists('token.json'):
-        # Usamos config.SCOPES
         creds = Credentials.from_authorized_user_file('token.json', config.SCOPES)
-    
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -36,7 +37,6 @@ def get_google_service(service_name, version):
             creds = flow.run_local_server(port=0)
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
-            
     return build(service_name, version, credentials=creds)
 
 def download_csv_data(csv_url):
@@ -47,6 +47,23 @@ def download_csv_data(csv_url):
     response.raise_for_status()
     return list(csv.DictReader(io.StringIO(response.text)))
 
+def get_file_metadata(service, folder_id, filenames):
+    """Obtiene la metadata de una lista de archivos CSV en Google Drive."""
+    statuses = []
+    for name in filenames:
+        query = f"name = '{name}' and '{folder_id}' in parents and trashed=false"
+        response = service.files().list(q=query, spaces='drive', fields='files(id, name, modifiedTime)').execute()
+        file = response.get('files', [])[0] if response.get('files') else None
+        
+        if file:
+            dt_utc = parser.isoparse(file['modifiedTime'])
+            dt_madrid = dt_utc.astimezone(pytz.timezone('Europe/Madrid'))
+            formatted_date = dt_madrid.strftime('%d-%m-%Y a las %H:%M:%S')
+            statuses.append({'name': name, 'status': 'Encontrado', 'last_updated': formatted_date})
+        else:
+            statuses.append({'name': name, 'status': 'No Encontrado', 'last_updated': 'N/A'})
+    return statuses
+
 def get_sheets_data(service, spreadsheet_id):
     """Lee y procesa los datos de todas las hojas de un Google Sheet."""
     sheet_metadata = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
@@ -55,8 +72,6 @@ def get_sheets_data(service, spreadsheet_id):
     all_leagues = []
     for sheet in sheets:
         sheet_title = sheet.get("properties", {}).get("title", "Sin Título")
-        print(f"▶️  Leyendo hoja: {sheet_title}")
-        
         result = service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=sheet_title).execute()
         values = result.get('values', [])
         
@@ -72,7 +87,7 @@ def get_sheets_data(service, spreadsheet_id):
         all_leagues.append(league_info)
     return all_leagues
 
-# --- RUTAS DE LA APLICACIÓN ---
+# --- RUTAS ---
 
 @app.route('/')
 def comunicados():
@@ -185,6 +200,67 @@ def ligas_especiales():
         print(error)
         
     return render_template('ligas_especiales.html', leagues=leagues, error=error, active_page='ligas-especiales')
+
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    """Gestiona el login y el acceso al panel de administración."""
+    if 'admin_logged_in' in session:
+        file_statuses = []
+        error = None
+        try:
+            drive_service = get_google_service('drive', 'v3')
+            # Comprueba los archivos CSV
+            filenames_to_check = [
+                config.COMUNICADOS_FILENAME, 
+                config.PARTICIPACION_FILENAME, 
+                config.PALMARES_FILENAME
+            ]
+            file_statuses = get_file_metadata(drive_service, config.GDRIVE_FOLDER_ID, filenames_to_check)
+
+            # AÑADIDO: Comprueba el Google Sheet de Ligas Especiales
+            if config.LIGAS_ESPECIALES_SHEET_ID:
+                sheet_metadata = drive_service.files().get(
+                    fileId=config.LIGAS_ESPECIALES_SHEET_ID,
+                    fields='name, modifiedTime'
+                ).execute()
+                
+                dt_utc = parser.isoparse(sheet_metadata['modifiedTime'])
+                dt_madrid = dt_utc.astimezone(pytz.timezone('Europe/Madrid'))
+                formatted_date = dt_madrid.strftime('%d-%m-%Y a las %H:%M:%S')
+                file_statuses.append({
+                    'name': f"{sheet_metadata['name']} (Sheet)",
+                    'status': 'Encontrado',
+                    'last_updated': formatted_date
+                })
+
+        except Exception as e:
+            error = f"No se pudo conectar con Google Drive para obtener el estado de los archivos: {e}"
+        
+        # CORRECCIÓN: URL actualizada para apuntar a la vista de logs correcta.
+        log_url = f"https://console.cloud.google.com/run/jobs/details/{config.CLOUD_RUN_REGION}/{config.CLOUD_RUN_JOB_NAME}/logs?project={config.GCP_PROJECT_ID}"
+
+        return render_template('admin_panel.html', 
+                               active_page='admin', 
+                               file_statuses=file_statuses, 
+                               log_url=log_url,
+                               error=error)
+
+    if request.method == 'POST':
+        if request.form.get('password') == config.ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            flash('¡Bienvenido al VAR!', 'success')
+            return redirect(url_for('admin'))
+        else:
+            flash('Contraseña incorrecta. Inténtalo de nuevo.', 'error')
+    
+    return render_template('admin_login.html', active_page='admin')
+
+@app.route('/logout')
+def logout():
+    session.pop('admin_logged_in', None)
+    flash('Has cerrado la sesión correctamente.', 'info')
+    return redirect(url_for('comunicados'))
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
