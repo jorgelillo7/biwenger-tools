@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
     <title>{% block title %}Tablón Biwenger{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,13 +40,17 @@
             <h1 class="font-header text-5xl font-bold text-gray-900 tracking-wider">LIGA MOCHILEROS</h1>
         </header>
 
-        <nav class="flex justify-center space-x-4 md:space-x-8 mb-10 border-b border-gray-300 pb-3 text-sm md:text-lg">
-            <a href="{{ url_for('comunicados') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'comunicados' %}active{% endif %}">Comunicados</a>
-            <a href="{{ url_for('salseo') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'salseo' %}active{% endif %}">Salseo</a>
-            <a href="{{ url_for('participacion') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'participacion' %}active{% endif %}">Participación</a>
-            <a href="{{ url_for('palmares') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'palmares' %}active{% endif %}">Palmarés</a>
-            <a href="{{ url_for('ligas_especiales') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'ligas-especiales' %}active{% endif %}">Ligas Especiales</a>
-        </nav>
+        <!-- CAMBIO: Se elimina el contenedor relativo y el overflow. Se añade flex-wrap. -->
+        <div class="w-full mb-10 border-b border-gray-300">
+            <nav class="flex justify-center flex-wrap -mb-px">
+                <!-- Se añade un margen inferior a cada enlace para separarlos si se van a una segunda línea -->
+                <a href="{{ url_for('comunicados') }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'comunicados' %}active{% endif %}">Comunicados</a>
+                <a href="{{ url_for('salseo') }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'salseo' %}active{% endif %}">Salseo</a>
+                <a href="{{ url_for('participacion') }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'participacion' %}active{% endif %}">Participación</a>
+                <a href="{{ url_for('palmares') }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'palmares' %}active{% endif %}">Palmarés</a>
+                <a href="{{ url_for('ligas_especiales') }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'ligas-especiales' %}active{% endif %}">Ligas Especiales</a>
+            </nav>
+        </div>
 
         <main>
             {% block content %}{% endblock %}
@@ -54,7 +58,7 @@
     </div>
 
     <footer class="text-center p-4 text-gray-500 text-sm">
-        Desarrollado con café y odio por Farolillo Oracle United ⭐️
+        Desarrollado con cocacola zero y amor/furia de Farolillo Oracle United ⭐️
     </footer>
 
 </body>
