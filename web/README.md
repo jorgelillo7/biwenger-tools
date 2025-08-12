@@ -2,10 +2,6 @@
 
 pip3 install Flask --break-system-packages
 
-COMUNICADOS_CSV_URL="https://drive.google.com/uc?export=download&id=1On5HRJ-dz5P4gYSbyhNWfpPlrhslA8gE" \
-PALMARES_CSV_URL="https://drive.google.com/uc?export=download&id=1s1p2SmQIcq-D8pukoStTfAfh5tiYllLK" \
-PARTICIPACION_CSV_URL="https://drive.google.com/uc?export=download&id=1ipxGNmQHPekLxakjiqAb5WFA0m8qgC4Y" \
-LIGAS_ESPECIALES_SHEET_ID="1ZaFZtKLFc0K4Ku099x3iV20OBkLZz9BEvojZpyOP0es" \
 python3 app.py
 
 http://127.0.0.1:8080
@@ -18,12 +14,7 @@ gcloud config set project biwenger-tools
 
 gcloud builds submit --tag gcr.io/biwenger-tools/web
 
-gcloud run deploy biwenger-summary \
-  --image gcr.io/biwenger-tools/web \
-  --platform managed \
-  --region europe-southwest1 \
-  --allow-unauthenticated \
-  --set-env-vars="COMUNICADOS_CSV_URL=https://drive.google.com/uc?export=download&id=1On5HRJ-dz5P4gYSbyhNWfpPlrhslA8gE,PALMARES_CSV_URL=https://drive.google.com/uc?export=download&id=1s1p2SmQIcq-D8pukoStTfAfh5tiYllLK,PARTICIPACION_CSV_URL=https://drive.google.com/uc?export=download&id=1ipxGNmQHPekLxakjiqAb5WFA0m8qgC4Y"
+./deploy.sh (lee del .env)
 
 
 url:

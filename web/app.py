@@ -6,6 +6,10 @@ import io
 import os
 import json
 from collections import defaultdict
+from datetime import datetime
+
+# Importamos toda la configuración desde nuestro nuevo archivo config.py
+import config
 
 # Importaciones para Google Cloud
 from google.oauth2.credentials import Credentials
@@ -15,28 +19,20 @@ from google.auth.transport.requests import Request
 
 app = Flask(__name__)
 
-# --- CONFIGURACIÓN ---
-COMUNICADOS_CSV_URL = os.getenv('COMUNICADOS_CSV_URL')
-PARTICIPACION_CSV_URL = os.getenv('PARTICIPACION_CSV_URL')
-PALMARES_CSV_URL = os.getenv('PALMARES_CSV_URL')
-LIGAS_ESPECIALES_SHEET_ID = os.getenv('LIGAS_ESPECIALES_SHEET_ID')
-
-MESSAGES_PER_PAGE = 5
-# Nuevos permisos: Drive (existente) + Sheets (solo lectura)
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly', 'https://www.googleapis.com/auth/spreadsheets.readonly']
-# -------------------
+# --- FUNCIONES AUXILIARES Y DE GOOGLE ---
 
 def get_google_service(service_name, version):
     """Función genérica para autenticar y crear un servicio de Google (Drive o Sheets)."""
     creds = None
     if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        # Usamos config.SCOPES
+        creds = Credentials.from_authorized_user_file('token.json', config.SCOPES)
     
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json', config.SCOPES)
             creds = flow.run_local_server(port=0)
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
@@ -46,7 +42,8 @@ def get_google_service(service_name, version):
 def download_csv_data(csv_url):
     """Descarga y parsea un CSV desde una URL."""
     if not csv_url: raise ValueError("La URL del CSV no está configurada.")
-    response = requests.get(csv_url)
+    cache_buster_url = f"{csv_url}&timestamp={datetime.now().timestamp()}"
+    response = requests.get(cache_buster_url)
     response.raise_for_status()
     return list(csv.DictReader(io.StringIO(response.text)))
 
@@ -56,7 +53,6 @@ def get_sheets_data(service, spreadsheet_id):
     sheets = sheet_metadata.get('sheets', '')
     
     all_leagues = []
-
     for sheet in sheets:
         sheet_title = sheet.get("properties", {}).get("title", "Sin Título")
         print(f"▶️  Leyendo hoja: {sheet_title}")
@@ -74,7 +70,6 @@ def get_sheets_data(service, spreadsheet_id):
             'rows': values[5:]
         }
         all_leagues.append(league_info)
-        
     return all_leagues
 
 # --- RUTAS DE LA APLICACIÓN ---
@@ -87,16 +82,15 @@ def comunicados():
     total_pages = 1
     comunicados_only = []
     try:
-        all_messages = download_csv_data(COMUNICADOS_CSV_URL)
-        comunicados_only = [m for m in all_messages if m.get('categoria') == 'comunicado']
+        all_messages = download_csv_data(config.COMUNICADOS_CSV_URL)
+        comunicados_only = [m for m in all_messages if m.get('categoria', '').strip() == 'comunicado']
         
         page = request.args.get('page', 1, type=int)
-        start = (page - 1) * MESSAGES_PER_PAGE
-        end = start + MESSAGES_PER_PAGE
+        start = (page - 1) * config.MESSAGES_PER_PAGE
+        end = start + config.MESSAGES_PER_PAGE
         
         paginated_messages = comunicados_only[start:end]
-        total_pages = (len(comunicados_only) + MESSAGES_PER_PAGE - 1) // MESSAGES_PER_PAGE
-
+        total_pages = (len(comunicados_only) + config.MESSAGES_PER_PAGE - 1) // config.MESSAGES_PER_PAGE
     except Exception as e:
         error = f"Ocurrió un error al cargar los comunicados: {e}"
         print(error)
@@ -115,9 +109,9 @@ def salseo():
     datos_curiosos = []
     cesiones = []
     try:
-        all_messages = download_csv_data(COMUNICADOS_CSV_URL)
-        datos_curiosos = [m for m in all_messages if m.get('categoria') == 'dato']
-        cesiones = [m for m in all_messages if m.get('categoria') == 'cesion']
+        all_messages = download_csv_data(config.COMUNICADOS_CSV_URL)
+        datos_curiosos = [m for m in all_messages if m.get('categoria', '').strip() == 'dato']
+        cesiones = [m for m in all_messages if m.get('categoria', '').strip() == 'cesion']
     except Exception as e:
         error = f"Ocurrió un error al cargar los datos: {e}"
         print(error)
@@ -133,7 +127,7 @@ def participacion():
     error = None
     stats = []
     try:
-        participation_data = download_csv_data(PARTICIPACION_CSV_URL)
+        participation_data = download_csv_data(config.PARTICIPACION_CSV_URL)
         for row in participation_data:
             comunicados_count = len(row['comunicados'].split(';')) if row['comunicados'] else 0
             datos_count = len(row['datos'].split(';')) if row['datos'] else 0
@@ -158,22 +152,18 @@ def palmares():
     seasons = defaultdict(lambda: defaultdict(list))
     error = None
     try:
-        palmares_data = download_csv_data(PALMARES_CSV_URL)
+        palmares_data = download_csv_data(config.PALMARES_CSV_URL)
         for row in palmares_data:
             season = row.get('temporada', '').strip()
             category = row.get('categoria', '').strip()
             value = row.get('valor', '').strip()
             
-            if not season or not category:
-                continue
-
+            if not season or not category: continue
             if category in ['multa', 'sancion', 'farolillo']:
                  seasons[season]['otros'].append({'tipo': category, 'valor': value})
             else:
                  seasons[season][category] = value
-
         sorted_seasons = sorted(seasons.items(), key=lambda item: item[0], reverse=True)
-
     except Exception as e:
         error = f"Ocurrió un error al cargar el palmarés: {e}"
         print(error)
@@ -183,14 +173,13 @@ def palmares():
 
 @app.route('/ligas-especiales')
 def ligas_especiales():
-    """Página que lee y muestra los datos de Google Sheets."""
     error = None
     leagues = []
     try:
-        if not LIGAS_ESPECIALES_SHEET_ID:
+        if not config.LIGAS_ESPECIALES_SHEET_ID:
             raise ValueError("El ID de la hoja de cálculo de Ligas Especiales no está configurado.")
         sheets_service = get_google_service('sheets', 'v4')
-        leagues = get_sheets_data(sheets_service, LIGAS_ESPECIALES_SHEET_ID)
+        leagues = get_sheets_data(sheets_service, config.LIGAS_ESPECIALES_SHEET_ID)
     except Exception as e:
         error = f"Ocurrió un error al cargar las ligas especiales: {e}"
         print(error)
