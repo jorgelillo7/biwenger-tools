@@ -22,7 +22,7 @@ gcloud run deploy biwenger-summary \
   --platform managed \
   --region europe-southwest1 \
   --allow-unauthenticated \
-  --set-env-vars="COMUNICADOS_CSV_URL=https://drive.google.com/uc?export=download&id=1t-yv13NPpuuhrbUUIJwoNYI0FSrsYS_q,PALMARES_CSV_URL=https://drive.google.com/uc?export=download&id=1cbXiUUo1RTG-6tlI0kK6tEx-DezfBAty"
+  --set-env-vars="COMUNICADOS_CSV_URL=https://drive.google.com/uc?export=download&id=1jNCSpiHpqFs7CjT4lOX5mKAVXY5u4xHP,PALMARES_CSV_URL=https://drive.google.com/uc?export=download&id=1s1p2SmQIcq-D8pukoStTfAfh5tiYllLK,PARTICIPACION_CSV_URL=https://drive.google.com/uc?export=download&id=1X9ouiR9OukI1m-AzGD2sysS5W6sD3cnD"
 
 
 url:
