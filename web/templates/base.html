@@ -28,7 +28,6 @@
             font-weight: bold; 
             border-bottom: 2px solid #38a169; /* Verde fútbol */
         }
-        /* Estilos para el contenido de los comunicados */
         .prose { color: #4a5568; }
         .prose h1, .prose h2, .prose h3, .prose strong { color: #1a202c; }
         .prose p { margin-top: 0.5em; margin-bottom: 0.5em; }
@@ -41,10 +40,12 @@
             <h1 class="font-header text-5xl font-bold text-gray-900 tracking-wider">LIGA MOCHILEROS</h1>
         </header>
 
-        <nav class="flex justify-center space-x-6 md:space-x-10 mb-10 border-b border-gray-300 pb-3">
-            <a href="{{ url_for('comunicados') }}" class="nav-link text-lg transition-colors hover:text-gray-900 {% if active_page == 'comunicados' %}active{% endif %}">Comunicados</a>
-            <a href="{{ url_for('participacion') }}" class="nav-link text-lg transition-colors hover:text-gray-900 {% if active_page == 'participacion' %}active{% endif %}">Participación</a>
-            <a href="{{ url_for('palmares') }}" class="nav-link text-lg transition-colors hover:text-gray-900 {% if active_page == 'palmares' %}active{% endif %}">Palmarés</a>
+        <nav class="flex justify-center space-x-4 md:space-x-8 mb-10 border-b border-gray-300 pb-3 text-sm md:text-lg">
+            <a href="{{ url_for('comunicados') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'comunicados' %}active{% endif %}">Comunicados</a>
+            <a href="{{ url_for('salseo') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'salseo' %}active{% endif %}">Salseo</a>
+            <a href="{{ url_for('participacion') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'participacion' %}active{% endif %}">Participación</a>
+            <a href="{{ url_for('palmares') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'palmares' %}active{% endif %}">Palmarés</a>
+            <a href="{{ url_for('ligas_especiales') }}" class="nav-link transition-colors hover:text-gray-900 {% if active_page == 'ligas-especiales' %}active{% endif %}">Ligas Especiales</a>
         </nav>
 
         <main>
@@ -53,7 +54,7 @@
     </div>
 
     <footer class="text-center p-4 text-gray-500 text-sm">
-        Desarrollado con cocacola zero y amor por Farolillo Oracle United ⭐️
+        Desarrollado con café y odio por Farolillo Oracle United ⭐️
     </footer>
 
 </body>

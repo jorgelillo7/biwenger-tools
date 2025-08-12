@@ -4,26 +4,28 @@
 
 {% block content %}
 <div class="card p-6 rounded-xl shadow-lg">
-    <h2 class="font-header text-3xl font-bold text-gray-900 mb-6 text-center">Ranking de Comunicados</h2>
+    <h2 class="font-header text-3xl font-bold text-gray-900 mb-6 text-center">Ranking de Participación</h2>
     
     {% if error %}
         <div class="text-center text-red-500">{{ error }}</div>
     {% elif stats %}
     <div class="overflow-x-auto">
-        <table class="min-w-full" id="stats-table">
+        <table class="min-w-full text-center">
             <thead class="border-b border-gray-300">
                 <tr>
-                    <th class="p-4 text-left text-sm font-bold text-green-700 uppercase tracking-wider cursor-pointer" onclick="sortTable(0)">Pos.</th>
-                    <th class="p-4 text-left text-sm font-bold text-green-700 uppercase tracking-wider cursor-pointer" onclick="sortTable(1)">Equipo</th>
-                    <th class="p-4 text-left text-sm font-bold text-green-700 uppercase tracking-wider cursor-pointer" onclick="sortTable(2)">Nº Comunicados</th>
+                    <th class="p-4 text-left text-sm font-bold text-green-700 uppercase tracking-wider">Equipo</th>
+                    <th class="p-4 text-sm font-bold text-green-700 uppercase tracking-wider">Comunicados</th>
+                    <th class="p-4 text-sm font-bold text-green-700 uppercase tracking-wider">Datos</th>
+                    <th class="p-4 text-sm font-bold text-green-700 uppercase tracking-wider">Cesiones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in stats %}
                 <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                    <td class="p-4 whitespace-nowrap text-lg">{{ loop.index }}</td>
-                    <td class="p-4 whitespace-nowrap text-lg">{{ row[0] }}</td>
-                    <td class="p-4 whitespace-nowrap text-lg font-bold">{{ row[1] }}</td>
+                    <td class="p-4 whitespace-nowrap text-lg text-left">{{ row.autor }}</td>
+                    <td class="p-4 whitespace-nowrap text-lg font-bold">{{ row.comunicados }}</td>
+                    <td class="p-4 whitespace-nowrap text-lg font-bold">{{ row.datos }}</td>
+                    <td class="p-4 whitespace-nowrap text-lg font-bold">{{ row.cesiones }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -33,49 +35,4 @@
         <p class="text-center">No hay datos de participación disponibles.</p>
     {% endif %}
 </div>
-
-<script>
-    // Script para ordenar la tabla
-    function sortTable(columnIndex) {
-        const table = document.getElementById("stats-table");
-        let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-        switching = true;
-        dir = "asc"; 
-
-        while (switching) {
-            switching = false;
-            rows = table.rows;
-            for (i = 1; i < (rows.length - 1); i++) {
-                shouldSwitch = false;
-                x = rows[i].getElementsByTagName("TD")[columnIndex];
-                y = rows[i + 1].getElementsByTagName("TD")[columnIndex];
-                
-                let xContent = isNaN(parseInt(x.innerHTML)) ? x.innerHTML.toLowerCase() : parseInt(x.innerHTML);
-                let yContent = isNaN(parseInt(y.innerHTML)) ? y.innerHTML.toLowerCase() : parseInt(y.innerHTML);
-
-                if (dir == "asc") {
-                    if (xContent > yContent) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                } else if (dir == "desc") {
-                    if (xContent < yContent) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                }
-            }
-            if (shouldSwitch) {
-                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                switching = true;
-                switchcount++;
-            } else {
-                if (switchcount == 0 && dir == "asc") {
-                    dir = "desc";
-                    switching = true;
-                }
-            }
-        }
-    }
-</script>
 {% endblock %}

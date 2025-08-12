@@ -8,6 +8,8 @@ import os
 import io
 import json
 from dotenv import load_dotenv
+import unidecode
+from collections import defaultdict 
 
 # Importaciones para Google Cloud
 from google.oauth2.credentials import Credentials
@@ -21,7 +23,8 @@ LEAGUE_ID = "340703"
 
 # --- CONFIGURACIÓN DE GOOGLE DRIVE ---
 GDRIVE_FOLDER_ID = '1DEY5pzf0iyZi3uxAFsjnE0tgVf8YiYI7'
-CSV_FILENAME = 'biwenger_comunicados.csv'
+COMUNICADOS_FILENAME = 'biwenger_comunicados.csv'
+PARTICIPACION_FILENAME = 'biwenger_participacion.csv'
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 # --- CONFIGURACIÓN DE SECRETOS ---
@@ -48,8 +51,6 @@ def get_gdrive_service_oauth():
     Autentica con Google Drive. Usa secretos en Cloud Run o archivos locales en desarrollo.
     """
     creds = None
-    
-    # Determina la ruta de los archivos de credenciales (Cloud Run vs Local)
     token_file = TOKEN_PATH if os.path.exists(TOKEN_PATH) else 'token.json'
     client_secrets_file = CLIENT_SECRETS_PATH if os.path.exists(CLIENT_SECRETS_PATH) else 'client_secrets.json'
 
@@ -63,11 +64,10 @@ def get_gdrive_service_oauth():
         else:
             print("▶️  Se necesita autorización. Abriendo navegador para iniciar sesión (solo en local)...")
             if not os.path.exists(client_secrets_file):
-                raise FileNotFoundError("El archivo 'client_secrets.json' es necesario para la autenticación local.")
+                raise FileNotFoundError(f"El archivo '{client_secrets_file}' es necesario para la autenticación local.")
             flow = InstalledAppFlow.from_client_secrets_file(client_secrets_file, SCOPES)
             creds = flow.run_local_server(port=0)
         
-        # Guarda las credenciales actualizadas para la próxima ejecución
         try:
             with open(token_file, 'w') as token:
                 token.write(creds.to_json())
@@ -87,8 +87,8 @@ def find_file_on_drive(service, name, folder_id):
     response = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
     return response.get('files', [])[0] if response.get('files') else None
 
-def load_messages_from_drive(service, file_id):
-    """Descarga el CSV desde Drive y lo carga en memoria."""
+def download_csv_from_drive(service, file_id):
+    """Descarga el contenido de un CSV desde Drive y lo devuelve como texto."""
     print(f"▶️  Descargando CSV existente desde Google Drive (ID: {file_id})...")
     request = service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
@@ -96,55 +96,62 @@ def load_messages_from_drive(service, file_id):
     done = False
     while not done:
         status, done = downloader.next_chunk()
-    csv_content = fh.getvalue().decode('utf-8')
-    csv_file = io.StringIO(csv_content)
-    
-    existing_ids = set()
-    messages = []
-    reader = csv.DictReader(csv_file)
-    for row in reader:
-        existing_ids.add(row['id_hash'])
-        try:
-            dt_object = datetime.strptime(row['fecha'], '%d-%m-%Y %H:%M:%S')
-            row['timestamp'] = int(dt_object.timestamp())
-        except (ValueError, TypeError):
-            row['timestamp'] = 0
-        messages.append(row)
-    print(f"✅ Se han cargado {len(messages)} mensajes existentes desde Google Drive.")
-    return existing_ids, messages
+    return fh.getvalue().decode('utf-8')
 
-def upload_or_update_drive_file(service, folder_id, filename, messages_data, existing_file):
-    """Sube o actualiza el archivo CSV en Google Drive."""
-    output = io.StringIO()
-    fieldnames = ['id_hash', 'fecha', 'autor', 'titulo', 'contenido']
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
-    writer.writeheader()
-    for message in messages_data:
-        row_to_write = message.copy()
-        row_to_write.pop('timestamp', None)
-        writer.writerow(row_to_write)
-    
-    csv_bytes = output.getvalue().encode('utf-8')
-    media = MediaIoBaseUpload(io.BytesIO(csv_bytes), mimetype='text/csv', resumable=True)
-    
+def upload_csv_to_drive(service, folder_id, filename, csv_content_string, existing_file):
+    """Sube o actualiza un archivo CSV en Google Drive a partir de un string."""
+    media = MediaIoBaseUpload(io.BytesIO(csv_content_string.encode('utf-8')), mimetype='text/csv', resumable=True)
     if existing_file:
         print(f"▶️  Actualizando archivo '{filename}' en Google Drive...")
         service.files().update(fileId=existing_file['id'], media_body=media).execute()
-        print(f"✅ Archivo actualizado (ID: {existing_file['id']}).")
+        print(f"✅ Archivo '{filename}' actualizado.")
     else:
         print(f"▶️  Subiendo nuevo archivo '{filename}' a Google Drive...")
         file_metadata = {'name': filename, 'parents': [folder_id]}
-        file = service.files().create(body=file_metadata, media_body=media, fields='id, webViewLink').execute()
-        print(f"✅ Archivo creado (ID: {file.get('id')}).")
-        print("▶️  Haciendo el archivo público...")
+        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
         permission = {'type': 'anyone', 'role': 'reader'}
         service.permissions().create(fileId=file.get('id'), body=permission).execute()
-        print(f"✅ ¡Archivo compartido públicamente! Enlace: {file.get('webViewLink')}")
+        print(f"✅ Archivo '{filename}' creado y compartido públicamente.")
+
+# --- NUEVAS FUNCIONES DE PROCESAMIENTO ---
+
+def categorize_title(title):
+    """Clasifica un mensaje según su título."""
+    clean_title = title.strip().upper()
+    if clean_title.startswith("DATO -"):
+        return "dato"
+    if unidecode.unidecode(clean_title).startswith("CESION -"):
+        return "cesion"
+    return "comunicado"
+
+def process_participation(all_messages):
+    """Procesa la lista de todos los mensajes y genera los datos de participación."""
+    participation = defaultdict(lambda: {"comunicado": [], "dato": [], "cesion": []})
+    for msg in all_messages:
+        author = msg.get('autor')
+        category = msg.get('categoria')
+        msg_id = msg.get('id_hash')
+        if author and category and msg_id and author != 'Autor Desconocido':
+            if msg_id not in participation[author][category]:
+                participation[author][category].append(msg_id)
+    
+    output_data = []
+    for author, categories in participation.items():
+        output_data.append({
+            'autor': author,
+            'comunicados': ";".join(categories['comunicado']),
+            'datos': ";".join(categories['dato']),
+            'cesiones': ";".join(categories['cesion']),
+        })
+    return output_data
 
 # --- FUNCIONES DE BIWENGER ---
 
 def authenticate_and_get_session(email, password):
     """Inicia sesión en Biwenger y devuelve una sesión autenticada."""
+    # CORRECCIÓN: Se deshabilitan los warnings de SSL para entornos locales con problemas de certificados.
+    requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
+    
     login_url = "https://biwenger.as.com/api/v2/auth/login"
     account_url = "https://biwenger.as.com/api/v2/account"
     
@@ -158,7 +165,8 @@ def authenticate_and_get_session(email, password):
     login_payload = {'email': email, 'password': password}
 
     print("▶️  Iniciando sesión en Biwenger...")
-    login_response = session.post(login_url, data=login_payload, headers=login_headers)
+    # CORRECCIÓN: Se añade verify=False para saltar la verificación SSL en local.
+    login_response = session.post(login_url, data=login_payload, headers=login_headers, verify=False)
     login_response.raise_for_status()
     token = login_response.json().get('token')
     if not token: raise Exception("Error en el login: No se recibió el token.")
@@ -168,7 +176,7 @@ def authenticate_and_get_session(email, password):
     session.headers.update({'Authorization': f'Bearer {token}'})
 
     print("▶️  Obteniendo datos de la cuenta...")
-    account_response = session.get(account_url)
+    account_response = session.get(account_url, verify=False)
     account_response.raise_for_status()
     account_data = account_response.json()
     
@@ -182,6 +190,8 @@ def authenticate_and_get_session(email, password):
     print(f"✅ ID de usuario ({user_id}) para la liga {LEAGUE_ID} obtenido correctamente.")
 
     session.headers.update({'X-League': str(LEAGUE_ID), 'X-User': str(user_id)})
+    # Hacemos que todas las futuras peticiones de esta sesión ignoren la verificación SSL
+    session.verify = False
     return session
 
 def fetch_league_users(session):
@@ -207,22 +217,17 @@ def fetch_board_messages(session):
     board_response.raise_for_status()
     return board_response.json()
 
-# --- FUNCIÓN PRINCIPAL ---
+# --- FUNCIÓN PRINCIPAL MODIFICADA ---
 
 def main():
     """Función principal que orquesta todo el proceso."""
-    # Lee las credenciales de Biwenger desde los archivos de secretos (Cloud Run)
     BIWENGER_EMAIL = read_secret_from_file(BIWENGER_EMAIL_PATH)
     BIWENGER_PASSWORD = read_secret_from_file(BIWENGER_PASSWORD_PATH)
 
-    # Si no los encuentra (ej. en local), usa las variables de entorno
     if not BIWENGER_EMAIL:
-        print("ℹ️  No se encontró el secreto de email, leyendo de variable de entorno...")
+        print("ℹ️  Leyendo credenciales de Biwenger desde .env local...")
         load_dotenv()
         BIWENGER_EMAIL = os.getenv("BIWENGER_EMAIL")
-    if not BIWENGER_PASSWORD:
-        print("ℹ️  No se encontró el secreto de contraseña, leyendo de variable de entorno...")
-        load_dotenv()
         BIWENGER_PASSWORD = os.getenv("BIWENGER_PASSWORD")
     
     if not BIWENGER_EMAIL or not BIWENGER_PASSWORD:
@@ -231,25 +236,30 @@ def main():
         
     try:
         service = get_gdrive_service_oauth()
-        # CORRECCIÓN: Los argumentos estaban intercambiados.
-        existing_file = find_file_on_drive(service, CSV_FILENAME, GDRIVE_FOLDER_ID)
-        
-        existing_ids, all_messages = set(), []
-        if existing_file:
-            existing_ids, all_messages = load_messages_from_drive(service, existing_file['id'])
-        else:
-            print("ℹ️  No se encontró el archivo en Drive. Se creará uno nuevo.")
 
+        # --- Cargar datos existentes ---
+        comunicados_file = find_file_on_drive(service, COMUNICADOS_FILENAME, GDRIVE_FOLDER_ID)
+        all_messages = []
+        existing_ids = set()
+        if comunicados_file:
+            csv_content = download_csv_from_drive(service, comunicados_file['id'])
+            reader = csv.DictReader(io.StringIO(csv_content))
+            for row in reader:
+                all_messages.append(row)
+                existing_ids.add(row['id_hash'])
+        else:
+            print(f"ℹ️  No se encontró '{COMUNICADOS_FILENAME}'. Se creará uno nuevo.")
+        
+        # --- Obtener y procesar nuevos mensajes ---
         session = authenticate_and_get_session(BIWENGER_EMAIL, BIWENGER_PASSWORD)
         user_map = fetch_league_users(session)
         board_data = fetch_board_messages(session)
-
+        
         new_messages_found = 0
         if 'data' in board_data and board_data['data']:
             for item in board_data['data']:
                 timestamp = item.get('date')
                 content_html = item.get('content', '')
-                
                 soup = BeautifulSoup(content_html, 'html.parser')
                 content_text_for_hash = soup.get_text(separator=' ', strip=True)
                 unique_string = f"{timestamp}{content_text_for_hash}"
@@ -257,33 +267,44 @@ def main():
 
                 if id_hash not in existing_ids:
                     new_messages_found += 1
-                    existing_ids.add(id_hash)
                     
                     date_str = datetime.fromtimestamp(timestamp).strftime('%d-%m-%Y %H:%M:%S') if timestamp else "N/A"
                     title = item.get('title', 'Sin título')
+                    category = categorize_title(title)
                     
                     author_name = item.get('author', {}).get('name')
                     author_id = item.get('author', {}).get('id')
-                    
                     if not author_name and author_id:
                         author_name = user_map.get(int(author_id))
-                    
                     if not author_name:
                         author_name = 'Autor Desconocido'
-                        if author_id:
-                            print(f"⚠️  No se encontró el nombre para el autor con ID: {author_id}. (Título: '{title}')")
                     
                     all_messages.append({
                         'id_hash': id_hash, 'fecha': date_str, 'autor': author_name,
-                        'titulo': title, 'contenido': content_html, 'timestamp': timestamp
+                        'titulo': title, 'contenido': content_html, 'categoria': category
                     })
         
         if new_messages_found > 0:
             print(f"\n✅ Se han encontrado {new_messages_found} mensajes nuevos.")
-            all_messages.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
-            upload_or_update_drive_file(service, GDRIVE_FOLDER_ID, CSV_FILENAME, all_messages, existing_file)
+            
+            # Ordenar y guardar el CSV de comunicados
+            all_messages.sort(key=lambda x: x.get('fecha'), reverse=True)
+            output_comunicados = io.StringIO()
+            writer_comunicados = csv.DictWriter(output_comunicados, fieldnames=['id_hash', 'fecha', 'autor', 'titulo', 'contenido', 'categoria'])
+            writer_comunicados.writeheader()
+            writer_comunicados.writerows(all_messages)
+            upload_csv_to_drive(service, GDRIVE_FOLDER_ID, COMUNICADOS_FILENAME, output_comunicados.getvalue(), comunicados_file)
+
+            # Procesar y guardar el CSV de participación
+            participation_data = process_participation(all_messages)
+            participation_file = find_file_on_drive(service, PARTICIPACION_FILENAME, GDRIVE_FOLDER_ID)
+            output_part = io.StringIO()
+            writer_part = csv.DictWriter(output_part, fieldnames=['autor', 'comunicados', 'datos', 'cesiones'])
+            writer_part.writeheader()
+            writer_part.writerows(participation_data)
+            upload_csv_to_drive(service, GDRIVE_FOLDER_ID, PARTICIPACION_FILENAME, output_part.getvalue(), participation_file)
         else:
-            print("\n✅ No hay mensajes nuevos. No se necesita actualizar el archivo en Drive.")
+            print("\n✅ No hay mensajes nuevos.")
 
     except Exception as e:
         print(f"❌ Ocurrió un error inesperado: {e}")

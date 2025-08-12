@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Salseo: Datos y Cesiones{% endblock %}
+
+{% block content %}
+    <!-- Controles para filtrar -->
+    <div class="flex justify-center space-x-4 mb-8">
+        <button id="btn-datos" class="filter-btn active px-6 py-2 rounded-full font-semibold transition">Mr. Lucen (Datos)</button>
+        <button id="btn-cesiones" class="filter-btn px-6 py-2 rounded-full font-semibold transition">Cesiones</button>
+    </div>
+
+    <!-- Barra de búsqueda genérica -->
+    <div class="mb-8">
+        <input type="text" id="search-input" placeholder="Buscar en la sección actual..." 
+               class="w-full p-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-800">
+    </div>
+
+    {% if error %}
+        <div class="card p-6 text-center text-red-500">{{ error }}</div>
+    {% endif %}
+
+    <!-- Contenedor para Datos Curiosos -->
+    <div id="datos-container" class="content-section space-y-6">
+        {% for message in datos %}
+        <article class="message-card card p-6 rounded-xl shadow-md">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 message-title">{{ message.titulo }}</h2>
+                    <p class="text-sm font-medium text-green-700 mt-1 message-author">por {{ message.autor }}</p>
+                </div>
+                <span class="text-sm text-gray-500 text-right flex-shrink-0 ml-4">{{ message.fecha }}</span>
+            </div>
+            <div class="prose max-w-none leading-relaxed message-content">{{ message.contenido | safe }}</div>
+        </article>
+        {% endfor %}
+    </div>
+
+    <!-- Contenedor para Cesiones (oculto por defecto) -->
+    <div id="cesiones-container" class="content-section space-y-6 hidden">
+        {% for message in cesiones %}
+        <article class="message-card card p-6 rounded-xl shadow-md">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 message-title">{{ message.titulo }}</h2>
+                    <p class="text-sm font-medium text-green-700 mt-1 message-author">por {{ message.autor }}</p>
+                </div>
+                <span class="text-sm text-gray-500 text-right flex-shrink-0 ml-4">{{ message.fecha }}</span>
+            </div>
+            <div class="prose max-w-none leading-relaxed message-content">{{ message.contenido | safe }}</div>
+        </article>
+        {% endfor %}
+    </div>
+
+    <!-- Mensaje para cuando no hay resultados de búsqueda -->
+    <div id="no-results" class="hidden card p-6 text-center">
+        <h3 class="text-xl font-medium">No se encontraron resultados.</h3>
+    </div>
+
+    <style>
+        .filter-btn {
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+        .filter-btn.active {
+            background-color: #38a169;
+            color: white;
+        }
+    </style>
+
+    <script>
+        // Almacenamos todos los mensajes en variables JS
+        const allDatos = {{ datos | tojson }};
+        const allCesiones = {{ cesiones | tojson }};
+
+        const btnDatos = document.getElementById('btn-datos');
+        const btnCesiones = document.getElementById('btn-cesiones');
+        const datosContainer = document.getElementById('datos-container');
+        const cesionesContainer = document.getElementById('cesiones-container');
+        const searchInput = document.getElementById('search-input');
+        const noResultsDiv = document.getElementById('no-results');
+
+        // Guardamos el HTML original de cada sección
+        const originalDatosHTML = datosContainer.innerHTML;
+        const originalCesionesHTML = cesionesContainer.innerHTML;
+
+        let activeContainer = datosContainer;
+        let activeDataset = allDatos;
+
+        function setActive(button, container, dataset, originalHTML) {
+            btnDatos.classList.remove('active');
+            btnCesiones.classList.remove('active');
+            datosContainer.classList.add('hidden');
+            cesionesContainer.classList.add('hidden');
+
+            button.classList.add('active');
+            container.classList.remove('hidden');
+            activeContainer = container;
+            activeDataset = dataset;
+            
+            // Restauramos el contenido original y limpiamos la búsqueda
+            container.innerHTML = originalHTML;
+            searchInput.value = ''; 
+            noResultsDiv.classList.add('hidden');
+        }
+
+        btnDatos.addEventListener('click', () => setActive(btnDatos, datosContainer, allDatos, originalDatosHTML));
+        btnCesiones.addEventListener('click', () => setActive(btnCesiones, cesionesContainer, allCesiones, originalCesionesHTML));
+
+        // Función para crear el HTML de una tarjeta de mensaje
+        function createMessageCard(message) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = message.contenido;
+            const contentText = tempDiv.textContent || tempDiv.innerText || "";
+
+            return {
+                html: `
+                <article class="message-card card p-6 rounded-xl shadow-md">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 message-title">${message.titulo}</h2>
+                            <p class="text-sm font-medium text-green-700 mt-1 message-author">por ${message.autor}</p>
+                        </div>
+                        <span class="text-sm text-gray-500 text-right flex-shrink-0 ml-4">${message.fecha}</span>
+                    </div>
+                    <div class="prose max-w-none leading-relaxed message-content">${message.contenido}</div>
+                </article>
+                `,
+                searchableText: (message.titulo + message.autor + contentText).toLowerCase()
+            };
+        }
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            noResultsDiv.classList.add('hidden');
+            
+            // Restaurar la vista si la búsqueda está vacía
+            if (!searchTerm) {
+                if (activeContainer === datosContainer) {
+                    datosContainer.innerHTML = originalDatosHTML;
+                } else {
+                    cesionesContainer.innerHTML = originalCesionesHTML;
+                }
+                return;
+            }
+
+            const filteredMessages = activeDataset.filter(msg => {
+                const cardData = createMessageCard(msg);
+                return cardData.searchableText.includes(searchTerm);
+            });
+
+            activeContainer.innerHTML = ''; // Limpiamos el contenedor activo
+
+            if (filteredMessages.length > 0) {
+                filteredMessages.forEach(msg => {
+                    activeContainer.innerHTML += createMessageCard(msg).html;
+                });
+            } else {
+                noResultsDiv.classList.remove('hidden');
+            }
+        });
+    </script>
+{% endblock %}

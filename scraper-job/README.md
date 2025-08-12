@@ -6,6 +6,7 @@ pip3 install --upgrade google-api-python-client google-auth-httplib2 google-auth
 pip3 install python-dotenv --break-system-packages
 pip3 install google-cloud-secret-manager --break-system-packages
 pip3 install google-auth --break-system-packages
+pip3 install Unidecode --break-system-packages
 
 
 python3 get_messages.py
