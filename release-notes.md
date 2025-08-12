@@ -2,6 +2,14 @@
 
 Aquí se documenta la increíble y a veces caótica evolución de nuestro pequeño gran proyecto para inmortalizar el salseo de la liga.
 
+### **v2.0 - El Portal Definitivo (12 de Agosto, 2025)**
+
+Una re-arquitectura clave para hacer el proyecto más robusto, seguro y fácil de mantener, sentando las bases para el futuro.
+
+* **🚀 (Beta) Nueva Sección "Ligas Especiales":** Se añade la funcionalidad más esperada. La web ahora puede leer y mostrar datos de competiciones especiales directamente desde un **Google Sheet**, permitiendo una gestión y actualización manual extremadamente sencilla.
+* **⚙️ Externalización de la Configuración:** Tanto el scraper como la aplicación web ahora utilizan un archivo `config.py` para gestionar sus parámetros. Las credenciales y datos sensibles se cargan de forma segura desde un archivo `.env` en local o desde Secret Manager / variables de entorno en la nube.
+* **🐛 Correcciones de Estabilidad:** Se solucionan bugs relacionados con la categorización de mensajes y la ordenación de fechas, asegurando que los datos se procesan y muestran siempre de forma correcta.
+
 ### **v1.5 - El Portal Inteligente (12 de Agosto, 2025)**
 
 Una actualización masiva centrada en la inteligencia de datos y la expansión de funcionalidades, haciendo la web más rápida y completa.

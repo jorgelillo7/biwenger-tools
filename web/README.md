@@ -1,21 +1,32 @@
-# config local
-
+## 🏠 Entorno Local (Scraper)
+### 1. Instalación de Dependencias
+```bash
 pip3 install Flask --break-system-packages
+```
 
+### 2. Ejecución
+```bash
 python3 app.py
+```
 
+### 3. Accedemos a la web
 http://127.0.0.1:8080
 
 
-# deploy
-
+## 🚀 Despliegue en Google Cloud
+### 1. Configuración del proyecto
+```bash
 gcloud auth login
 gcloud config set project biwenger-tools
+```
 
+### 2. Construye la imagen Docker
 gcloud builds submit --tag gcr.io/biwenger-tools/web
 
-./deploy.sh (lee del .env)
+### 3. Deploy en script que usa .env
+```bash
+./deploy.sh
+```
 
-
-url:
-  https://biwenger-summary-pjpqofuevq-no.a.run.app/
+### 4. Accedemos a la web
+https://biwenger-summary-pjpqofuevq-no.a.run.app/

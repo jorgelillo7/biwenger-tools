@@ -1,5 +1,35 @@
-# local:
+# Guía de Puesta en Marcha y Despliegue
 
+Esta guía detalla los pasos para configurar y ejecutar el proyecto tanto en un entorno local como en Google Cloud.
+
+## 🏠 Entorno Local (Scraper)
+
+Pasos para configurar y ejecutar el script `get_messages.py` en tu máquina.
+
+### 1. Instalación de Dependencias
+
+Se recomienda usar un entorno virtual (venv). Para instalar todas las librerías necesarias, crea un archivo `requirements.txt` con el siguiente contenido y luego ejecuta el comando pip install.
+
+**requirements.txt**
+```
+requests
+beautifulsoup4
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+python-dotenv
+google-cloud-secret-manager
+google-auth
+Unidecode
+```
+
+```bash
+pip install -r requirements.txt
+```
+
+o a mano
+
+```
 pip3 install requests --break-system-packages
 pip3 install beautifulsoup4 --break-system-packages
 pip3 install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib --break-system-packages
@@ -7,73 +37,73 @@ pip3 install python-dotenv --break-system-packages
 pip3 install google-cloud-secret-manager --break-system-packages
 pip3 install google-auth --break-system-packages
 pip3 install Unidecode --break-system-packages
+```
 
+### 2. Configuración de Google API (Solo la primera vez)
 
+Sigue estos pasos para permitir que el script acceda a tu Google Drive.
+
+#### Configura la Pantalla de Consentimiento:
+- Ve a la **Consola de Google Cloud** > **APIs y servicios** > **Pantalla de consentimiento de OAuth**.
+- Selecciona **Externo**, rellena los datos de tu aplicación y añade tu email como usuario de prueba.
+
+#### Crea las Credenciales:
+- En **APIs y servicios** > **Credenciales**, haz clic en **+ CREAR CREDENCIALES** > **ID de cliente de OAuth**.
+- Selecciona **Aplicación de escritorio**.
+- Descarga el archivo JSON y renómbralo a `client_secrets.json` en la carpeta del scraper.
+
+#### Configura la Carpeta en Drive:
+- Crea una carpeta en tu Google Drive para los CSVs.
+- Copia el ID de la carpeta desde la URL y pégalo en el archivo `.env` del scraper.
+
+### 3. Ejecución
+
+La primera vez que ejecutes el script, se abrirá un navegador para que autorices el acceso a tu cuenta de Google. Esto creará un archivo `token.json` que se usará en las siguientes ejecuciones.
+
+```bash
 python3 get_messages.py
+```
 
+## 🚀 Despliegue en Google Cloud
 
-## Guía: Configurar API de Drive para Cuentas Personales (OAuth 2.0)
-Este método permitirá que el script te pida permiso a través de tu navegador para acceder a tu Google Drive.
+Pasos para desplegar el scraper como un Cloud Run Job automatizado.
 
-### Paso 1: Configurar la Pantalla de Consentimiento
-Ve a la Consola de Google Cloud y selecciona tu proyecto.
+### 1. Secret Manager
 
-En el menú de la izquierda (☰), ve a APIs y servicios > Pantalla de consentimiento de OAuth.
+Guarda todas tus credenciales de forma segura.
 
-En "Tipo de usuario", selecciona Externo y haz clic en CREAR.
-
-Rellena los campos obligatorios:
-
-Nombre de la aplicación: Ponle un nombre, por ejemplo, "Biwenger Scraper".
-
-Correo electrónico de asistencia al usuario: Selecciona tu dirección de email.
-
-Información de contacto del desarrollador: Vuelve a poner tu dirección de email.
-
-Haz clic en GUARDAR Y CONTINUAR. En la página de "Permisos", no añadas nada y haz clic en GUARDAR Y CONTINUAR.
-
-En la página de "Usuarios de prueba", haz clic en + ADD USERS y añade tu propia dirección de Gmail. Haz clic en AÑADIR y luego en GUARDAR Y CONTINUAR.
-
-### Paso 2: Crear las Credenciales
-En el menú de la izquierda, ve a APIs y servicios > Credenciales.
-
-Haz clic en + CREAR CREDENCIALES en la parte superior y selecciona ID de cliente de OAuth.
-
-En "Tipo de aplicación", elige Aplicación de escritorio.
-
-Dale un nombre (ej. "Credenciales de Escritorio") y haz clic en CREAR.
-
-Aparecerá una ventana con tu ID y secreto de cliente. Haz clic en el botón DESCARGAR JSON.
-
-Renombra el archivo descargado a client_secrets.json y guárdalo en la misma carpeta que tu script de Python.
-
-### Paso 3: Configurar la Carpeta en tu Drive
-Ve a tu Google Drive y crea una carpeta normal en "Mi unidad". Dale un nombre como "Biwenger CSV".
-
-Abre la carpeta y copia el ID de la carpeta de la URL, como hiciste antes.
-
-Pega este ID en la variable GDRIVE_FOLDER_ID de tu script de Python.
-
-¡Y ya está! La primera vez que ejecutes el nuevo script, se abrirá una ventana en tu navegador pidiéndote que inicies sesión y aceptes los permisos. Una vez lo hagas, se creará un archivo token.json y no tendrás que volver a iniciar sesión.
-
-
-
-# deploy
-
-## secret manager
+#### Credenciales de Google (desde archivo):
+```bash
+# Asegúrate de que los archivos están en la carpeta del scraper
 gcloud secrets create client_secrets_json --data-file="client_secrets.json"
 gcloud secrets create token_json --data-file="token.json"
-echo -n "XXXXX@gmail.com" | gcloud secrets create biwenger-email --data-file=-
-echo -n "XXXXX" | gcloud secrets create biwenger-password --data-file=-
-echo -n "XXXXX" | gcloud secrets create gdrive-folder-id --data-file=-
+```
 
-update secret ->
+#### Credenciales de Biwenger y Drive (como texto):
+```bash
+echo -n "TU_EMAIL@gmail.com" | gcloud secrets create biwenger-email --data-file=-
+echo -n "TU_CONTRASEÑA" | gcloud secrets create biwenger-password --data-file=-
+echo -n "ID_DE_LA_CARPETA_DE_DRIVE" | gcloud secrets create gdrive-folder-id --data-file=-
+```
+
+#### Para actualizar un secreto (ej. token.json):
+```bash
 gcloud secrets versions add token_json --data-file="token.json"
+```
 
-## cloud run
+### 2. Cloud Run Jobs
+
+Construye la imagen de Docker, despliega el job y ejecútalo.
+
+#### Construye la imagen Docker:
+```bash
 gcloud builds submit --tag gcr.io/biwenger-tools/scraper-job
+```
 
+#### Crea el Job (solo la primera vez):
+Usa un nombre único y agrupa todos los secretos en un solo flag.
 
+```bash
 gcloud run jobs create biwenger-scraper-data \
   --image gcr.io/biwenger-tools/scraper-job \
   --region europe-southwest1 \
@@ -82,9 +112,17 @@ gcloud run jobs create biwenger-scraper-data \
   --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \
   --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest" \
   --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
+```
 
+#### Actualiza el Job (para nuevas versiones de código):
+```bash
+  gcloud run jobs update biwenger-scraper-data \
+  --image gcr.io/biwenger-tools/scraper-job \
+  --region europe-southwest1
+```
 
-
+o para añadirle nuevos secretos
+```bash
 gcloud run jobs update biwenger-scraper-data \
   --image gcr.io/biwenger-tools/scraper-job \
   --region europe-southwest1 \
@@ -93,13 +131,18 @@ gcloud run jobs update biwenger-scraper-data \
   --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \
   --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest" \
   --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
+  ```
 
-
+#### Ejecuta el Job manualmente:
+```bash
   gcloud run jobs execute biwenger-scraper-data --region europe-southwest1
+```
 
+---
 
-  update
+## 📋 Notas Importantes
 
-  gcloud run jobs update biwenger-scraper-data \
-  --image gcr.io/biwenger-tools/scraper-job \
-  --region europe-southwest1
+- **Primera ejecución local**: Requiere autorización manual en el navegador
+- **Seguridad**: Nunca subas archivos `client_secrets.json` o `token.json` al repositorio
+- **Actualización de secrets**: Usa `gcloud secrets versions add` para actualizar credenciales
+- **Monitoreo**: Revisa los logs en Google Cloud Console para verificar la ejecución
