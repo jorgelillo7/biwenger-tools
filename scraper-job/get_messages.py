@@ -118,7 +118,7 @@ def upload_csv_to_drive(service, folder_id, filename, csv_content_string, existi
 def categorize_title(title):
     """Clasifica un mensaje según su título."""
     clean_title = title.strip().upper()
-    if clean_title.startswith("DATO -"):
+    if clean_title.startswith("DATO -") or clean_title.startswith("DATOS -"):
         return "dato"
     if unidecode.unidecode(clean_title).startswith("CESION -"):
         return "cesion"
@@ -149,7 +149,6 @@ def process_participation(all_messages):
 
 def authenticate_and_get_session(email, password):
     """Inicia sesión en Biwenger y devuelve una sesión autenticada."""
-    # CORRECCIÓN: Se deshabilitan los warnings de SSL para entornos locales con problemas de certificados.
     requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
     
     login_url = "https://biwenger.as.com/api/v2/auth/login"
@@ -165,7 +164,6 @@ def authenticate_and_get_session(email, password):
     login_payload = {'email': email, 'password': password}
 
     print("▶️  Iniciando sesión en Biwenger...")
-    # CORRECCIÓN: Se añade verify=False para saltar la verificación SSL en local.
     login_response = session.post(login_url, data=login_payload, headers=login_headers, verify=False)
     login_response.raise_for_status()
     token = login_response.json().get('token')
@@ -190,7 +188,6 @@ def authenticate_and_get_session(email, password):
     print(f"✅ ID de usuario ({user_id}) para la liga {LEAGUE_ID} obtenido correctamente.")
 
     session.headers.update({'X-League': str(LEAGUE_ID), 'X-User': str(user_id)})
-    # Hacemos que todas las futuras peticiones de esta sesión ignoren la verificación SSL
     session.verify = False
     return session
 
@@ -245,6 +242,12 @@ def main():
             csv_content = download_csv_from_drive(service, comunicados_file['id'])
             reader = csv.DictReader(io.StringIO(csv_content))
             for row in reader:
+                # CORRECCIÓN: Recreamos el timestamp al cargar para poder ordenar
+                try:
+                    dt_object = datetime.strptime(row['fecha'], '%d-%m-%Y %H:%M:%S')
+                    row['timestamp'] = int(dt_object.timestamp())
+                except (ValueError, TypeError):
+                    row['timestamp'] = 0
                 all_messages.append(row)
                 existing_ids.add(row['id_hash'])
         else:
@@ -281,18 +284,25 @@ def main():
                     
                     all_messages.append({
                         'id_hash': id_hash, 'fecha': date_str, 'autor': author_name,
-                        'titulo': title, 'contenido': content_html, 'categoria': category
+                        'titulo': title, 'contenido': content_html, 'categoria': category,
+                        'timestamp': timestamp # Añadimos el timestamp para ordenar
                     })
         
         if new_messages_found > 0:
             print(f"\n✅ Se han encontrado {new_messages_found} mensajes nuevos.")
             
-            # Ordenar y guardar el CSV de comunicados
-            all_messages.sort(key=lambda x: x.get('fecha'), reverse=True)
+            # CORRECCIÓN: Ordenamos por el timestamp numérico, no por el string de la fecha
+            all_messages.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
+            
             output_comunicados = io.StringIO()
+            # Se añade la nueva columna 'categoria'
             writer_comunicados = csv.DictWriter(output_comunicados, fieldnames=['id_hash', 'fecha', 'autor', 'titulo', 'contenido', 'categoria'])
             writer_comunicados.writeheader()
-            writer_comunicados.writerows(all_messages)
+            for msg in all_messages:
+                # Creamos una copia para no modificar el diccionario original
+                row_to_write = msg.copy()
+                row_to_write.pop('timestamp', None) # Eliminamos la clave 'timestamp' antes de escribir
+                writer_comunicados.writerow(row_to_write)
             upload_csv_to_drive(service, GDRIVE_FOLDER_ID, COMUNICADOS_FILENAME, output_comunicados.getvalue(), comunicados_file)
 
             # Procesar y guardar el CSV de participación
