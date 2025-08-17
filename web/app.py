@@ -102,12 +102,14 @@ def get_file_metadata(service, folder_id, filenames):
 
 # --- RUTAS DE LA APLICACIÓN ---
 
-@app.route('/<season>/')
 @app.route('/')
-def comunicados(season=None):
-    if season is None:
-        season = config.TEMPORADA_ACTUAL
-    
+def home():
+    # Redirige a la temporada actual por defecto
+    return redirect(url_for('comunicados', season=config.TEMPORADA_ACTUAL))
+
+@app.route('/<season>/')
+def comunicados(season):
+    session['current_season'] = season # Guardamos la temporada en la sesión
     error = None
     paginated_messages = []
     page = 1
@@ -139,10 +141,12 @@ def comunicados(season=None):
                            current_page=page,
                            total_pages=total_pages,
                            season=season,
+                           temporada_actual=config.TEMPORADA_ACTUAL,
                            temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
 
 @app.route('/<season>/salseo')
 def salseo(season):
+    session['current_season'] = season
     error = None
     datos_curiosos = []
     cesiones = []
@@ -164,10 +168,12 @@ def salseo(season):
                            error=error, 
                            active_page='salseo',
                            season=season,
+                           temporada_actual=config.TEMPORADA_ACTUAL,
                            temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
 
 @app.route('/<season>/participacion')
 def participacion(season):
+    session['current_season'] = season
     error = None
     stats = []
     try:
@@ -177,9 +183,9 @@ def participacion(season):
         participation_data = download_csv_data_by_id(drive_service, file_id)
 
         for row in participation_data:
-            comunicados_count = len(row['comunicados'].split(';')) if row['comunicados'] else 0
-            datos_count = len(row['datos'].split(';')) if row['datos'] else 0
-            cesiones_count = len(row['cesiones'].split(';')) if row['cesiones'] else 0
+            comunicados_count = len(row.get('comunicados', '').split(';')) if row.get('comunicados') else 0
+            datos_count = len(row.get('datos', '').split(';')) if row.get('datos') else 0
+            cesiones_count = len(row.get('cesiones', '').split(';')) if row.get('cesiones') else 0
             
             stats.append({
                 'autor': row['autor'],
@@ -198,7 +204,35 @@ def participacion(season):
                            error=error, 
                            active_page='participacion',
                            season=season,
+                           temporada_actual=config.TEMPORADA_ACTUAL,
                            temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
+
+@app.route('/<season>/ligas-especiales')
+def ligas_especiales(season):
+    session['current_season'] = season
+    error = None
+    leagues = []
+    try:
+        sheet_id = config.LIGAS_ESPECIALES_SHEETS.get(season)
+        if not sheet_id:
+            raise ValueError(f"No hay una hoja de Ligas Especiales configurada para la temporada {season}.")
+        
+        sheets_service = get_google_service('sheets', 'v4')
+        leagues = get_sheets_data(sheets_service, sheet_id)
+    except Exception as e:
+        error = f"Ocurrió un error al cargar las ligas especiales: {e}"
+        print(error)
+        
+    return render_template('ligas_especiales.html', 
+                           leagues=leagues, 
+                           error=error, 
+                           active_page='ligas-especiales',
+                           season=season,
+                           temporada_actual=config.TEMPORADA_ACTUAL,
+                           temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
+
+
+# --- RUTAS FIJAS (NO DEPENDEN DE LA TEMPORADA) ---
 
 @app.route('/palmares')
 def palmares():
@@ -210,15 +244,15 @@ def palmares():
         palmares_data = download_csv_data_by_id(drive_service, file_id)
 
         for row in palmares_data:
-            season = row.get('temporada', '').strip()
+            season_data = row.get('temporada', '').strip()
             category = row.get('categoria', '').strip()
             value = row.get('valor', '').strip()
             
-            if not season or not category: continue
+            if not season_data or not category: continue
             if category in ['multa', 'sancion', 'farolillo']:
-                 seasons[season]['otros'].append({'tipo': category, 'valor': value})
+                 seasons[season_data]['otros'].append({'tipo': category, 'valor': value})
             else:
-                 seasons[season][category] = value
+                 seasons[season_data][category] = value
         sorted_seasons = sorted(seasons.items(), key=lambda item: item[0], reverse=True)
     except Exception as e:
         error = f"Ocurrió un error al cargar el palmarés: {e}"
@@ -229,53 +263,50 @@ def palmares():
                            seasons=sorted_seasons, 
                            error=error, 
                            active_page='palmares',
-                           season=config.TEMPORADA_ACTUAL,
+                           season=session.get('current_season', config.TEMPORADA_ACTUAL),
+                           temporada_actual=config.TEMPORADA_ACTUAL,
                            temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
 
-# CORRECCIÓN: La ruta ahora acepta el parámetro de la temporada
-@app.route('/<season>/ligas-especiales')
-def ligas_especiales(season):
+@app.route('/reglamento')
+def reglamento():
     error = None
     leagues = []
     try:
-        if not config.LIGAS_ESPECIALES_SHEET_ID:
-            raise ValueError("El ID de la hoja de cálculo de Ligas Especiales no está configurado.")
-        sheets_service = get_google_service('sheets', 'v4')
-        leagues = get_sheets_data(sheets_service, config.LIGAS_ESPECIALES_SHEET_ID)
+        # Usamos la temporada guardada en la sesión para cargar los datos correctos del índice
+        sheet_id = config.LIGAS_ESPECIALES_SHEETS.get(session.get('current_season', config.TEMPORADA_ACTUAL))
+        if sheet_id:
+            sheets_service = get_google_service('sheets', 'v4')
+            leagues = get_sheets_data(sheets_service, sheet_id)
     except Exception as e:
-        error = f"Ocurrió un error al cargar las ligas especiales: {e}"
+        error = f"Ocurrió un error al cargar los datos para el índice: {e}"
         print(error)
-        
-    return render_template('ligas_especiales.html', 
-                           leagues=leagues, 
-                           error=error, 
-                           active_page='ligas-especiales',
-                           season=season, # Pasamos la temporada actual a la plantilla
+
+    return render_template('reglamento.html', 
+                           leagues=leagues,
+                           error=error,
+                           active_page='reglamento',
+                           season=session.get('current_season', config.TEMPORADA_ACTUAL),
+                           temporada_actual=config.TEMPORADA_ACTUAL,
                            temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
-    """Gestiona el login y el acceso al panel de administración."""
+    season = session.get('current_season', config.TEMPORADA_ACTUAL)
     if 'admin_logged_in' in session:
         file_statuses = []
         error = None
         try:
             drive_service = get_google_service('drive', 'v3')
-            # Comprueba los archivos CSV de la temporada actual
             filenames_to_check = [
-                f"{config.COMUNICADOS_FILENAME_BASE}_{config.TEMPORADA_ACTUAL}.csv", 
-                f"{config.PARTICIPACION_FILENAME_BASE}_{config.TEMPORADA_ACTUAL}.csv",
+                f"{config.COMUNICADOS_FILENAME_BASE}_{season}.csv", 
+                f"{config.PARTICIPACION_FILENAME_BASE}_{season}.csv",
                 config.PALMARES_FILENAME
             ]
             file_statuses = get_file_metadata(drive_service, config.GDRIVE_FOLDER_ID, filenames_to_check)
 
-            # Comprueba el Google Sheet de Ligas Especiales
-            if config.LIGAS_ESPECIALES_SHEET_ID:
-                sheet_metadata = drive_service.files().get(
-                    fileId=config.LIGAS_ESPECIALES_SHEET_ID,
-                    fields='name, modifiedTime'
-                ).execute()
-                
+            sheet_id = config.LIGAS_ESPECIALES_SHEETS.get(season)
+            if sheet_id:
+                sheet_metadata = drive_service.files().get(fileId=sheet_id, fields='name, modifiedTime').execute()
                 dt_utc = parser.isoparse(sheet_metadata['modifiedTime'])
                 dt_madrid = dt_utc.astimezone(pytz.timezone('Europe/Madrid'))
                 formatted_date = dt_madrid.strftime('%d-%m-%Y a las %H:%M:%S')
@@ -295,7 +326,8 @@ def admin():
                                file_statuses=file_statuses, 
                                log_url=log_url,
                                error=error,
-                               season=config.TEMPORADA_ACTUAL,
+                               season=season,
+                               temporada_actual=config.TEMPORADA_ACTUAL,
                                temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
 
     if request.method == 'POST':
@@ -308,14 +340,15 @@ def admin():
     
     return render_template('admin_login.html', 
                            active_page='admin',
-                           season=config.TEMPORADA_ACTUAL,
+                           season=season,
+                           temporada_actual=config.TEMPORADA_ACTUAL,
                            temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
 
 @app.route('/logout')
 def logout():
     session.pop('admin_logged_in', None)
     flash('Has cerrado la sesión correctamente.', 'info')
-    return redirect(url_for('comunicados'))
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))

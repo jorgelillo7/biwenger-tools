@@ -9,7 +9,13 @@ load_dotenv()
 TEMPORADA_ACTUAL = "25-26"
 # Lista de todas las temporadas disponibles para mostrar en el menú.
 # Añade nuevas temporadas aquí cuando empiecen (ej. "26-27").
-TEMPORADAS_DISPONIBLES = ["25-26"]
+TEMPORADAS_DISPONIBLES = ["24-25", "25-26"]
+
+# NUEVO: Diccionario para mapear temporadas a IDs de Google Sheets
+LIGAS_ESPECIALES_SHEETS = {
+    "25-26": os.getenv('LIGAS_ESPECIALES_SHEET_ID_25_26'),
+    "24-25": os.getenv('LIGAS_ESPECIALES_SHEET_ID_24_25')
+}
 
 
 # --- CONFIGURACIÓN (leída desde el entorno) ---

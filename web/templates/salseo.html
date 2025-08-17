@@ -129,8 +129,8 @@
             };
         }
 
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase().trim();
+        function filterContent() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
             noResultsDiv.classList.add('hidden');
             
             // Restaurar la vista si la búsqueda está vacía
@@ -156,6 +156,21 @@
                 });
             } else {
                 noResultsDiv.classList.remove('hidden');
+            }
+        }
+        
+        searchInput.addEventListener('input', filterContent);
+
+        // Activar pestaña según el parámetro de la URL al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tab = urlParams.get('tab');
+
+            if (tab === 'cesiones') {
+                setActive(btnCesiones, cesionesContainer, allCesiones, originalCesionesHTML);
+            } else {
+                // Por defecto, se activa la de datos
+                setActive(btnDatos, datosContainer, allDatos, originalDatosHTML);
             }
         });
     </script>

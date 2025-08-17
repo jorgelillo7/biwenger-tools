@@ -43,17 +43,23 @@
             <div class="w-1/3 text-right">
                 <div class="relative inline-block text-left">
                     <div>
-                        <button type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none" id="menu-button" aria-expanded="true" aria-haspopup="true">
+                        <button type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none" id="season-menu-button" aria-expanded="true" aria-haspopup="true">
                             Temporada {{ season }}
                             <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                         </button>
                     </div>
-                    <div id="season-menu" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
-                        <div class="py-1" role="none">
+                    <!-- CORRECCIÓN: Se añade z-10 para que el menú aparezca por encima de la navegación -->
+                    <div id="season-menu" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-10">
+                        <div class="py-1">
                             {% for s in temporadas_disponibles %}
-                            <a href="{{ url_for('comunicados', season=s) }}" class="text-gray-700 block px-4 py-2 text-sm {% if s == season %}bg-gray-100 font-bold{% endif %}" role="menuitem" tabindex="-1">Temporada {{ s }}</a>
+                            <a href="{{ url_for('comunicados', season=s) }}" 
+                               class="text-gray-700 block px-4 py-2 text-sm 
+                                      {% if s == season %}bg-gray-100 font-medium{% endif %}
+                                      {% if s == temporada_actual %}text-green-600 font-bold{% endif %}">
+                                Temporada {{ s }}
+                            </a>
                             {% endfor %}
                         </div>
                     </div>
@@ -63,13 +69,28 @@
 
         <div class="w-full mb-10 border-b border-gray-300">
             <nav class="flex justify-center flex-wrap -mb-px">
-                <!-- CAMBIO: Se ha reordenado la navegación -->
+                <!-- Enlaces que dependen de la temporada -->
                 <a href="{{ url_for('comunicados', season=season) }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'comunicados' %}active{% endif %}">Comunicados</a>
                 <a href="{{ url_for('salseo', season=season) }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'salseo' %}active{% endif %}">Salseo</a>
                 <a href="{{ url_for('ligas_especiales', season=season) }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'ligas_especiales' %}active{% endif %}">Ligas Especiales</a>
                 <a href="{{ url_for('participacion', season=season) }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'participacion' %}active{% endif %}">Participación</a>
-                <a href="{{ url_for('palmares') }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'palmares' %}active{% endif %}">Palmarés</a>
-                <a href="{{ url_for('admin') }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'admin' %}active{% endif %}">VAR (Admin)</a>
+                
+                <!-- Menú desplegable para secciones fijas -->
+                <div class="relative inline-block text-left">
+                    <button type="button" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 flex items-center" id="more-menu-button">
+                        Más
+                        <svg class="ml-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div id="more-menu" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-10">
+                        <div class="py-1">
+                            <a href="{{ url_for('reglamento') }}" class="text-gray-700 block px-4 py-2 text-sm {% if active_page == 'reglamento' %}bg-gray-100 font-bold{% endif %}">Fair Play</a>
+                            <a href="{{ url_for('palmares') }}" class="text-gray-700 block px-4 py-2 text-sm {% if active_page == 'palmares' %}bg-gray-100 font-bold{% endif %}">Palmarés</a>
+                            <a href="{{ url_for('admin') }}" class="text-gray-700 block px-4 py-2 text-sm {% if active_page == 'admin' %}bg-gray-100 font-bold{% endif %}">VAR (Admin)</a>
+                        </div>
+                    </div>
+                </div>
             </nav>
         </div>
 
@@ -101,20 +122,37 @@
     </footer>
 
     <script>
-        // Script para el menú desplegable
-        const menuButton = document.getElementById('menu-button');
-        const seasonMenu = document.getElementById('season-menu');
-        
-        if (menuButton && seasonMenu) {
-            menuButton.addEventListener('click', () => {
-                seasonMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (event) => {
-                if (!menuButton.contains(event.target) && !seasonMenu.contains(event.target)) {
-                    seasonMenu.classList.add('hidden');
-                }
-            });
+        // Función genérica para controlar un menú desplegable
+        function setupDropdown(buttonId, menuId) {
+            const menuButton = document.getElementById(buttonId);
+            const menu = document.getElementById(menuId);
+            
+            if (menuButton && menu) {
+                menuButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    menu.classList.toggle('hidden');
+                });
+            }
         }
+
+        // Configurar ambos menús
+        setupDropdown('season-menu-button', 'season-menu');
+        setupDropdown('more-menu-button', 'more-menu');
+
+        // Cerrar los menús si se hace clic fuera
+        document.addEventListener('click', (event) => {
+            const seasonMenu = document.getElementById('season-menu');
+            const moreMenu = document.getElementById('more-menu');
+            const seasonButton = document.getElementById('season-menu-button');
+            const moreButton = document.getElementById('more-menu-button');
+
+            if (seasonMenu && !seasonMenu.classList.contains('hidden') && !seasonButton.contains(event.target)) {
+                seasonMenu.classList.add('hidden');
+            }
+            if (moreMenu && !moreMenu.classList.contains('hidden') && !moreButton.contains(event.target)) {
+                moreMenu.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>
