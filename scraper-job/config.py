@@ -5,16 +5,18 @@ from dotenv import load_dotenv
 # Carga las variables del archivo .env para el desarrollo local
 load_dotenv()
 
+# --- CONFIGURACIÓN DE TEMPORADA ---
+# CAMBIO PRINCIPAL: Define la temporada activa.
+# Para empezar un nuevo año, solo tienes que cambiar este valor (ej. "26-27").
+TEMPORADA_ACTUAL = "25-26"
+
 # --- CONFIGURACIÓN CRÍTICA (leída desde el entorno) ---
-# En local, se leen del .env. En Cloud Run, se leen de los secretos montados.
 BIWENGER_EMAIL = os.getenv("BIWENGER_EMAIL")
 BIWENGER_PASSWORD = os.getenv("BIWENGER_PASSWORD")
 GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID")
 
 # --- CONFIGURACIÓN NO CRÍTICA (valores fijos) ---
 LEAGUE_ID = "340703"
-COMUNICADOS_FILENAME = "biwenger_comunicados.csv"
-PARTICIPACION_FILENAME = "biwenger_participacion.csv"
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 # --- URLs DE LA API DE BIWENGER ---

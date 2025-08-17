@@ -39,7 +39,7 @@ def get_gdrive_service_oauth():
 
     if os.path.exists(token_file):
         creds = Credentials.from_authorized_user_file(token_file, config.SCOPES)
-    
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -177,20 +177,22 @@ def fetch_board_messages(session):
 def main():
     biwenger_email = read_secret_from_file(config.BIWENGER_EMAIL_PATH) or config.BIWENGER_EMAIL
     biwenger_password = read_secret_from_file(config.BIWENGER_PASSWORD_PATH) or config.BIWENGER_PASSWORD
+    gdrive_folder_id = read_secret_from_file(config.GDRIVE_FOLDER_ID_PATH) or config.GDRIVE_FOLDER_ID
     
-    gdrive_folder_id = read_secret_from_file(config.GDRIVE_FOLDER_ID_PATH)
-    if not gdrive_folder_id:
-        print("ℹ️  No se encontró el secreto de gdrive_folder_id, leyendo de .env local...")
-        gdrive_folder_id = os.getenv("GDRIVE_FOLDER_ID")
-
-
     if not all([biwenger_email, biwenger_password, gdrive_folder_id]):
         print("⚠️ ¡Error! No se pudieron leer todas las credenciales necesarias.")
         return
         
     try:
+        # Construimos los nombres de archivo dinámicamente según la temporada
+        comunicados_filename = f"comunicados_{config.TEMPORADA_ACTUAL}.csv"
+        participacion_filename = f"participacion_{config.TEMPORADA_ACTUAL}.csv"
+
+        print(f"--- Iniciando scraper para la temporada: {config.TEMPORADA_ACTUAL} ---")
+
         service = get_gdrive_service_oauth()
-        comunicados_file = find_file_on_drive(service, config.COMUNICADOS_FILENAME, gdrive_folder_id)
+        
+        comunicados_file = find_file_on_drive(service, comunicados_filename, gdrive_folder_id)
         
         all_messages = []
         existing_ids = set()
@@ -200,6 +202,8 @@ def main():
             for row in reader:
                 all_messages.append(row)
                 existing_ids.add(row['id_hash'])
+        else:
+            print(f"ℹ️  No se encontró '{comunicados_filename}'. Se creará uno nuevo.")
         
         session = authenticate_and_get_session(biwenger_email, biwenger_password)
         user_map = fetch_league_users(session)
@@ -239,15 +243,15 @@ def main():
             writer_comunicados = csv.DictWriter(output_comunicados, fieldnames=['id_hash', 'fecha', 'autor', 'titulo', 'contenido', 'categoria'])
             writer_comunicados.writeheader()
             writer_comunicados.writerows(all_messages)
-            upload_csv_to_drive(service, gdrive_folder_id, config.COMUNICADOS_FILENAME, output_comunicados.getvalue(), comunicados_file)
+            upload_csv_to_drive(service, gdrive_folder_id, comunicados_filename, output_comunicados.getvalue(), comunicados_file)
 
             participation_data = process_participation(all_messages, user_map)
-            participation_file = find_file_on_drive(service, config.PARTICIPACION_FILENAME, gdrive_folder_id)
+            participation_file = find_file_on_drive(service, participacion_filename, gdrive_folder_id)
             output_part = io.StringIO()
             writer_part = csv.DictWriter(output_part, fieldnames=['autor', 'comunicados', 'datos', 'cesiones'])
             writer_part.writeheader()
             writer_part.writerows(participation_data)
-            upload_csv_to_drive(service, gdrive_folder_id, config.PARTICIPACION_FILENAME, output_part.getvalue(), participation_file)
+            upload_csv_to_drive(service, gdrive_folder_id, participacion_filename, output_part.getvalue(), participation_file)
         else:
             print("\n✅ No hay mensajes nuevos.")
 
