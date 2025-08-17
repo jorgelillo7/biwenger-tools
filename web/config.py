@@ -5,6 +5,13 @@ from dotenv import load_dotenv
 # Carga las variables del archivo .env si existe (para desarrollo local)
 load_dotenv()
 
+# --- CONFIGURACIÓN DE TEMPORADA ---
+TEMPORADA_ACTUAL = "25-26"
+# Lista de todas las temporadas disponibles para mostrar en el menú.
+# Añade nuevas temporadas aquí cuando empiecen (ej. "26-27").
+TEMPORADAS_DISPONIBLES = ["25-26"]
+
+
 # --- CONFIGURACIÓN (leída desde el entorno) ---
 COMUNICADOS_CSV_URL = os.getenv('COMUNICADOS_CSV_URL')
 PARTICIPACION_CSV_URL = os.getenv('PARTICIPACION_CSV_URL')
@@ -22,7 +29,8 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
 # --- CONFIGURACIÓN NO CRÍTICA (valores fijos) ---
 MESSAGES_PER_PAGE = 7
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly', 'https://www.googleapis.com/auth/spreadsheets.readonly']
-# Nombres de los archivos que el panel de admin necesita comprobar
-COMUNICADOS_FILENAME = "biwenger_comunicados.csv"
-PARTICIPACION_FILENAME = "biwenger_participacion.csv"
+
+# Nombres base de los archivos. La temporada se añadirá dinámicamente.
+COMUNICADOS_FILENAME_BASE = "comunicados"
+PARTICIPACION_FILENAME_BASE = "participacion"
 PALMARES_FILENAME = "palmares.csv"
