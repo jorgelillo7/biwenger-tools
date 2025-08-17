@@ -15,18 +15,32 @@
 
     <!-- Estado de los Ficheros -->
     <div class="card p-6 rounded-xl shadow-lg">
-        <h3 class="font-header text-2xl font-bold text-gray-800 mb-4">Estado de los Ficheros de Datos</h3>
+        <h3 class="font-header text-2xl font-bold text-gray-800 mb-4">Estado de los Ficheros de Datos (Temporada {{ season }})</h3>
         {% if error %}
             <p class="text-red-500">{{ error }}</p>
         {% else %}
             <div class="space-y-3">
                 {% for file in file_statuses %}
-                <div class="flex justify-between items-center p-3 rounded-md {% if file.status == 'Encontrado' %}bg-green-50{% else %}bg-red-50{% endif %}">
+                {% set row_color = 'bg-green-50' %}
+                {% if file.status != 'Encontrado' %}
+                    {% set row_color = 'bg-red-50' %}
+                {% elif file.is_stale %}
+                    {% set row_color = 'bg-yellow-50' %}
+                {% endif %}
+
+                <div class="flex justify-between items-center p-3 rounded-md {{ row_color }}">
                     <p class="font-medium text-gray-700">{{ file.name }}</p>
                     <div>
                         <span class="text-sm text-gray-500 mr-4">Última actualización: {{ file.last_updated }}</span>
-                        <span class="text-xs font-semibold px-2 py-1 rounded-full {% if file.status == 'Encontrado' %}bg-green-200 text-green-800{% else %}bg-red-200 text-red-800{% endif %}">
-                            {{ file.status }}
+                        
+                        {% set badge_color = 'bg-green-200 text-green-800' %}
+                        {% if file.status != 'Encontrado' %}
+                            {% set badge_color = 'bg-red-200 text-red-800' %}
+                        {% elif file.is_stale %}
+                            {% set badge_color = 'bg-yellow-200 text-yellow-800' %}
+                        {% endif %}
+                        <span class="text-xs font-semibold px-2 py-1 rounded-full {{ badge_color }}">
+                            {% if file.is_stale %}Desactualizado{% else %}{{ file.status }}{% endif %}
                         </span>
                     </div>
                 </div>
@@ -48,7 +62,7 @@
                 </svg>
             </a>
             <p class="ml-4 text-sm text-gray-500">
-                Abre los registros de la última ejecución del job en Google Cloud. En local, este enlace te lleva a PROD
+                Abre los registros de la última ejecución del job en Google Cloud.
             </p>
         </div>
     </div>

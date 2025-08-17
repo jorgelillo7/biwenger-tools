@@ -2,6 +2,17 @@
 
 Aquí se documenta la increíble y a veces caótica evolución de nuestro pequeño gran proyecto para inmortalizar el salseo de la liga.
 
+### **v2.5 - El Viajero del Tiempo (18 de Agosto, 2025)**
+
+Una actualización fundamental que convierte la web en un archivo histórico, permitiendo navegar entre diferentes temporadas de forma fluida e intuitiva.
+
+* **✈️ Navegación Multi-Temporada:** ¡La funcionalidad estrella! Se añade un menú desplegable en la cabecera que permite seleccionar y visualizar los datos (`Comunicados`, `Salseo`, `Participación`, `Ligas Especiales`) de cualquier temporada pasada.
+* **💾 Scraper Multi-Temporada:** El script `get_messages.py` ahora es consciente de la temporada activa. Genera y actualiza los archivos CSV con un sufijo de temporada (ej. `comunicados_25-26.csv`), manteniendo los datos de cada año perfectamente aislados y preservados.
+* **⚖️ Nueva Sección "Fair Play":** Se crea una página de reglamento completa, con un índice navegable, contenido dinámico (como la lista de Ligas Especiales) y un diseño mejorado para la lectura de las normas.
+* **🖥️ Panel de Admin Mejorado:** La sección "VAR (Admin)" ahora muestra el estado de los archivos correspondientes a la temporada que se está visualizando y avisa si alguno de los ficheros dinámicos lleva más de 7 días sin actualizarse.
+* **📱 Mejoras de UI/UX:** Se corrige la visualización del menú de navegación en dispositivos móviles para evitar que los textos se corten o solapen, y se solucionan problemas de posicionamiento en los menús desplegables.
+
+
 ### **v2.0 - El Portal Definitivo (12 de Agosto, 2025)**
 
 Una re-arquitectura clave para hacer el proyecto más robusto, seguro y fácil de mantener, sentando las bases para el futuro.

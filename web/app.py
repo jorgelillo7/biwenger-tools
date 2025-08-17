@@ -6,7 +6,7 @@ import io
 import os
 import json
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser
 import pytz
 
@@ -83,9 +83,11 @@ def get_sheets_data(service, spreadsheet_id):
         all_leagues.append(league_info)
     return all_leagues
 
-def get_file_metadata(service, folder_id, filenames):
-    """Obtiene la metadata de una lista de archivos CSV en Google Drive."""
+def get_file_metadata(service, folder_id, filenames, dynamic_files):
+    """Obtiene la metadata de una lista de archivos y comprueba si están desactualizados."""
     statuses = []
+    now_madrid = datetime.now(pytz.timezone('Europe/Madrid'))
+
     for name in filenames:
         query = f"name = '{name}' and '{folder_id}' in parents and trashed=false"
         response = service.files().list(q=query, spaces='drive', fields='files(id, name, modifiedTime)').execute()
@@ -95,9 +97,15 @@ def get_file_metadata(service, folder_id, filenames):
             dt_utc = parser.isoparse(file['modifiedTime'])
             dt_madrid = dt_utc.astimezone(pytz.timezone('Europe/Madrid'))
             formatted_date = dt_madrid.strftime('%d-%m-%Y a las %H:%M:%S')
-            statuses.append({'name': name, 'status': 'Encontrado', 'last_updated': formatted_date})
+            
+            is_stale = False
+            # Comprueba si el archivo debe ser revisado y si tiene más de 7 días
+            if name in dynamic_files and (now_madrid - dt_madrid) > timedelta(days=7):
+                is_stale = True
+
+            statuses.append({'name': name, 'status': 'Encontrado', 'last_updated': formatted_date, 'is_stale': is_stale})
         else:
-            statuses.append({'name': name, 'status': 'No Encontrado', 'last_updated': 'N/A'})
+            statuses.append({'name': name, 'status': 'No Encontrado', 'last_updated': 'N/A', 'is_stale': False})
     return statuses
 
 # --- RUTAS DE LA APLICACIÓN ---
@@ -297,23 +305,31 @@ def admin():
         error = None
         try:
             drive_service = get_google_service('drive', 'v3')
-            filenames_to_check = [
-                f"{config.COMUNICADOS_FILENAME_BASE}_{season}.csv", 
-                f"{config.PARTICIPACION_FILENAME_BASE}_{season}.csv",
-                config.PALMARES_FILENAME
-            ]
-            file_statuses = get_file_metadata(drive_service, config.GDRIVE_FOLDER_ID, filenames_to_check)
+            
+            comunicados_actual = f"{config.COMUNICADOS_FILENAME_BASE}_{season}.csv"
+            participacion_actual = f"{config.PARTICIPACION_FILENAME_BASE}_{season}.csv"
+            dynamic_files = [comunicados_actual, participacion_actual]
 
             sheet_id = config.LIGAS_ESPECIALES_SHEETS.get(season)
+            if sheet_id:
+                dynamic_files.append(sheet_id) # También comprobamos el Sheet
+
+            filenames_to_check = [comunicados_actual, participacion_actual, config.PALMARES_FILENAME]
+            file_statuses = get_file_metadata(drive_service, config.GDRIVE_FOLDER_ID, filenames_to_check, dynamic_files)
+
             if sheet_id:
                 sheet_metadata = drive_service.files().get(fileId=sheet_id, fields='name, modifiedTime').execute()
                 dt_utc = parser.isoparse(sheet_metadata['modifiedTime'])
                 dt_madrid = dt_utc.astimezone(pytz.timezone('Europe/Madrid'))
                 formatted_date = dt_madrid.strftime('%d-%m-%Y a las %H:%M:%S')
+                
+                is_stale = (datetime.now(pytz.timezone('Europe/Madrid')) - dt_madrid) > timedelta(days=7)
+
                 file_statuses.append({
                     'name': f"{sheet_metadata['name']} (Sheet)",
                     'status': 'Encontrado',
-                    'last_updated': formatted_date
+                    'last_updated': formatted_date,
+                    'is_stale': is_stale
                 })
 
         except Exception as e:
@@ -333,14 +349,13 @@ def admin():
     if request.method == 'POST':
         if request.form.get('password') == config.ADMIN_PASSWORD:
             session['admin_logged_in'] = True
-            flash('¡Bienvenido al VAR!', 'success')
             return redirect(url_for('admin'))
         else:
             flash('Contraseña incorrecta. Inténtalo de nuevo.', 'error')
     
     return render_template('admin_login.html', 
                            active_page='admin',
-                           season=season,
+                           season=session.get('current_season', config.TEMPORADA_ACTUAL),
                            temporada_actual=config.TEMPORADA_ACTUAL,
                            temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
 

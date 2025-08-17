@@ -50,7 +50,6 @@
                             </svg>
                         </button>
                     </div>
-                    <!-- CORRECCIÓN: Se añade z-10 para que el menú aparezca por encima de la navegación -->
                     <div id="season-menu" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-10">
                         <div class="py-1">
                             {% for s in temporadas_disponibles %}
@@ -72,7 +71,7 @@
                 <!-- Enlaces que dependen de la temporada -->
                 <a href="{{ url_for('comunicados', season=season) }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'comunicados' %}active{% endif %}">Comunicados</a>
                 <a href="{{ url_for('salseo', season=season) }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'salseo' %}active{% endif %}">Salseo</a>
-                <a href="{{ url_for('ligas_especiales', season=season) }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'ligas_especiales' %}active{% endif %}">Ligas Especiales</a>
+                <a href="{{ url_for('ligas_especiales', season=season) }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'ligas-especiales' %}active{% endif %}">Ligas Especiales</a>
                 <a href="{{ url_for('participacion', season=season) }}" class="nav-link whitespace-nowrap text-lg transition-colors hover:text-gray-900 px-4 mb-3 {% if active_page == 'participacion' %}active{% endif %}">Participación</a>
                 
                 <!-- Menú desplegable para secciones fijas -->
