@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Salseo: Datos y Cesiones{% endblock %}
+{% block title %}Salseo: Datos, Cesiones y Crónicas{% endblock %}
 
 {% block content %}
     <!-- Controles para filtrar -->
     <div class="flex justify-center space-x-4 mb-8">
-        <button id="btn-datos" class="filter-btn active px-6 py-2 rounded-full font-semibold transition">Mr. Lucen (Datos)</button>
+        <button id="btn-cronicas" class="filter-btn active px-6 py-2 rounded-full font-semibold transition">Crónicas</button>
+        <button id="btn-datos" class="filter-btn px-6 py-2 rounded-full font-semibold transition">Mr. Lucen (Datos)</button>
         <button id="btn-cesiones" class="filter-btn px-6 py-2 rounded-full font-semibold transition">Cesiones</button>
     </div>
 
@@ -19,8 +20,24 @@
         <div class="card p-6 text-center text-red-500">{{ error }}</div>
     {% endif %}
 
-    <!-- Contenedor para Datos Curiosos -->
-    <div id="datos-container" class="content-section space-y-6">
+    <!-- Contenedor para Crónicas (visible por defecto) -->
+    <div id="cronicas-container" class="content-section space-y-6">
+        {% for message in cronicas %}
+        <article class="message-card card p-6 rounded-xl shadow-md">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 message-title">{{ message.titulo }}</h2>
+                    <p class="text-sm font-medium text-green-700 mt-1 message-author">por {{ message.autor }}</p>
+                </div>
+                <span class="text-sm text-gray-500 text-right flex-shrink-0 ml-4">{{ message.fecha }}</span>
+            </div>
+            <div class="prose max-w-none leading-relaxed message-content">{{ message.contenido | safe }}</div>
+        </article>
+        {% endfor %}
+    </div>
+
+    <!-- Contenedor para Datos Curiosos (oculto por defecto) -->
+    <div id="datos-container" class="content-section space-y-6 hidden">
         {% for message in datos %}
         <article class="message-card card p-6 rounded-xl shadow-md">
             <div class="flex justify-between items-start mb-4">
@@ -69,44 +86,45 @@
 
     <script>
         // Almacenamos todos los mensajes en variables JS
+        const allCronicas = {{ cronicas | tojson }};
         const allDatos = {{ datos | tojson }};
         const allCesiones = {{ cesiones | tojson }};
 
+        const btnCronicas = document.getElementById('btn-cronicas');
         const btnDatos = document.getElementById('btn-datos');
         const btnCesiones = document.getElementById('btn-cesiones');
+        const cronicasContainer = document.getElementById('cronicas-container');
         const datosContainer = document.getElementById('datos-container');
         const cesionesContainer = document.getElementById('cesiones-container');
         const searchInput = document.getElementById('search-input');
         const noResultsDiv = document.getElementById('no-results');
 
         // Guardamos el HTML original de cada sección
+        const originalCronicasHTML = cronicasContainer.innerHTML;
         const originalDatosHTML = datosContainer.innerHTML;
         const originalCesionesHTML = cesionesContainer.innerHTML;
 
-        let activeContainer = datosContainer;
-        let activeDataset = allDatos;
+        let activeContainer = cronicasContainer;
+        let activeDataset = allCronicas;
 
         function setActive(button, container, dataset, originalHTML) {
-            btnDatos.classList.remove('active');
-            btnCesiones.classList.remove('active');
-            datosContainer.classList.add('hidden');
-            cesionesContainer.classList.add('hidden');
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(cont => cont.classList.add('hidden'));
 
             button.classList.add('active');
             container.classList.remove('hidden');
             activeContainer = container;
             activeDataset = dataset;
             
-            // Restauramos el contenido original y limpiamos la búsqueda
             container.innerHTML = originalHTML;
             searchInput.value = ''; 
             noResultsDiv.classList.add('hidden');
         }
 
+        btnCronicas.addEventListener('click', () => setActive(btnCronicas, cronicasContainer, allCronicas, originalCronicasHTML));
         btnDatos.addEventListener('click', () => setActive(btnDatos, datosContainer, allDatos, originalDatosHTML));
         btnCesiones.addEventListener('click', () => setActive(btnCesiones, cesionesContainer, allCesiones, originalCesionesHTML));
 
-        // Función para crear el HTML de una tarjeta de mensaje
         function createMessageCard(message) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = message.contenido;
@@ -133,13 +151,10 @@
             const searchTerm = searchInput.value.toLowerCase().trim();
             noResultsDiv.classList.add('hidden');
             
-            // Restaurar la vista si la búsqueda está vacía
             if (!searchTerm) {
-                if (activeContainer === datosContainer) {
-                    datosContainer.innerHTML = originalDatosHTML;
-                } else {
-                    cesionesContainer.innerHTML = originalCesionesHTML;
-                }
+                if (activeContainer === cronicasContainer) activeContainer.innerHTML = originalCronicasHTML;
+                else if (activeContainer === datosContainer) activeContainer.innerHTML = originalDatosHTML;
+                else activeContainer.innerHTML = originalCesionesHTML;
                 return;
             }
 
@@ -148,7 +163,7 @@
                 return cardData.searchableText.includes(searchTerm);
             });
 
-            activeContainer.innerHTML = ''; // Limpiamos el contenedor activo
+            activeContainer.innerHTML = '';
 
             if (filteredMessages.length > 0) {
                 filteredMessages.forEach(msg => {
@@ -161,16 +176,16 @@
         
         searchInput.addEventListener('input', filterContent);
 
-        // Activar pestaña según el parámetro de la URL al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const tab = urlParams.get('tab');
 
             if (tab === 'cesiones') {
                 setActive(btnCesiones, cesionesContainer, allCesiones, originalCesionesHTML);
-            } else {
-                // Por defecto, se activa la de datos
+            } else if (tab === 'datos') {
                 setActive(btnDatos, datosContainer, allDatos, originalDatosHTML);
+            } else {
+                setActive(btnCronicas, cronicasContainer, allCronicas, originalCronicasHTML);
             }
         });
     </script>

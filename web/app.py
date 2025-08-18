@@ -158,6 +158,7 @@ def salseo(season):
     error = None
     datos_curiosos = []
     cesiones = []
+    cronicas = []
     try:
         drive_service = get_google_service('drive', 'v3')
         filename = f"{config.COMUNICADOS_FILENAME_BASE}_{season}.csv"
@@ -166,13 +167,15 @@ def salseo(season):
 
         datos_curiosos = [m for m in all_messages if m.get('categoria', '').strip() == 'dato']
         cesiones = [m for m in all_messages if m.get('categoria', '').strip() == 'cesion']
+        cronicas = [m for m in all_messages if m.get('categoria', '').strip() == 'cronica']
     except Exception as e:
         error = f"Ocurrió un error al cargar los datos de la temporada {season}: {e}"
         print(error)
 
     return render_template('salseo.html', 
                            datos=datos_curiosos, 
-                           cesiones=cesiones, 
+                           cesiones=cesiones,
+                           cronicas=cronicas,
                            error=error, 
                            active_page='salseo',
                            season=season,
@@ -194,13 +197,15 @@ def participacion(season):
             comunicados_count = len(row.get('comunicados', '').split(';')) if row.get('comunicados') else 0
             datos_count = len(row.get('datos', '').split(';')) if row.get('datos') else 0
             cesiones_count = len(row.get('cesiones', '').split(';')) if row.get('cesiones') else 0
+            cronicas_count = len(row.get('cronicas', '').split(';')) if row.get('cronicas') else 0
             
             stats.append({
                 'autor': row['autor'],
                 'comunicados': comunicados_count,
                 'datos': datos_count,
                 'cesiones': cesiones_count,
-                'total': comunicados_count + datos_count + cesiones_count
+                'cronicas': cronicas_count,
+                'total': comunicados_count + datos_count + cesiones_count + cronicas_count
             })
         stats.sort(key=lambda item: item['total'], reverse=True)
     except Exception as e:

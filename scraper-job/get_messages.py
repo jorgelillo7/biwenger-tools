@@ -86,16 +86,22 @@ def upload_csv_to_drive(service, folder_id, filename, csv_content_string, existi
 # --- FUNCIONES DE PROCESAMIENTO ---
 
 def categorize_title(title):
+    """Clasifica un mensaje según su título."""
     clean_title = title.strip().upper()
+    # Comparamos sin acentos para "CRONICA" y "CESION"
+    normalized_title = unidecode.unidecode(clean_title)
+    
+    if normalized_title.startswith("CRONICA -"):
+        return "cronica"
     if clean_title.startswith("DATO -") or clean_title.startswith("DATOS -"):
         return "dato"
-    if unidecode.unidecode(clean_title).startswith("CESION -"):
+    if normalized_title.startswith("CESION -"):
         return "cesion"
     return "comunicado"
 
 def process_participation(all_messages, user_map):
     participation = {
-        name: {"comunicado": [], "dato": [], "cesion": []}
+        name: {"comunicado": [], "dato": [], "cesion": [], "cronica": []}
         for name in user_map.values()
     }
     for msg in all_messages:
@@ -105,6 +111,7 @@ def process_participation(all_messages, user_map):
         if author and category and msg_id and author in participation:
             if msg_id not in participation[author][category]:
                 participation[author][category].append(msg_id)
+    
     output_data = []
     for author, categories in participation.items():
         output_data.append({
@@ -112,6 +119,7 @@ def process_participation(all_messages, user_map):
             'comunicados': ";".join(categories['comunicado']),
             'datos': ";".join(categories['dato']),
             'cesiones': ";".join(categories['cesion']),
+            'cronicas': ";".join(categories['cronica'])
         })
     return output_data
 
@@ -248,7 +256,7 @@ def main():
             participation_data = process_participation(all_messages, user_map)
             participation_file = find_file_on_drive(service, participacion_filename, gdrive_folder_id)
             output_part = io.StringIO()
-            writer_part = csv.DictWriter(output_part, fieldnames=['autor', 'comunicados', 'datos', 'cesiones'])
+            writer_part = csv.DictWriter(output_part, fieldnames=['autor', 'comunicados', 'datos', 'cesiones', 'cronicas'])
             writer_part.writeheader()
             writer_part.writerows(participation_data)
             upload_csv_to_drive(service, gdrive_folder_id, participacion_filename, output_part.getvalue(), participation_file)

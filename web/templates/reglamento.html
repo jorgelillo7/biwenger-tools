@@ -26,6 +26,7 @@
                         <li><a href="#copa-navidad" class="text-sm text-gray-600 hover:underline">2.1 Copa Navidad</a></li>
                         <li><a href="#copa-castolo" class="text-sm text-gray-600 hover:underline">2.2 Copa Castolo</a></li>
                         <li><a href="#liga-camareros" class="text-sm text-gray-600 hover:underline">2.3 Liga Camareros</a></li>
+                        <li><a href="#liga-amistad" class="text-sm text-gray-600 hover:underline">2.4 Liga Amistad</a></li>
                     </ul>
                 </li>
                 <li><a href="#normas-comunicados" class="text-green-700 hover:underline">3. Normas para Comunicados</a></li>
@@ -67,17 +68,32 @@
 
             <!-- Nuevos Torneos -->
             <h3 id="nuevos-torneos" class="font-header">2. Nuevos Torneos</h3>
-            <ul>
-                <li><strong id="copa-navidad">Copa Navidad:</strong> Fase de grupos y Final Four. La final coincide con la última jornada del año.</li>
-                <li><strong id="copa-castolo">Copa Castolo:</strong> Eliminatoria directa. El campeón de la Copa Navidad entra directamente en semifinales y el ganador obtiene recompensas para la siguiente temporada.</li>
-                <li><strong id="liga-camareros">Liga Camareros:</strong> (Detalles pendientes de definir).</li>
-            </ul>
+            <p>Puedes consultar los resultados y clasificaciones en la sección de <a href="{{ url_for('ligas_especiales', season=season) }}" class="text-green-700 hover:underline">Ligas Especiales</a>.</p>
+            <div class="space-y-4 not-prose">
+                <div id="copa-navidad" class="p-4 border-l-4 border-blue-500 bg-blue-50 rounded-r-md">
+                    <h4 class="font-bold text-gray-800">Copa Navidad</h4>
+                    <p class="text-sm text-gray-700">Fase de grupos y Final Four. La final coincide con la última jornada del año.</p>
+                </div>
+                <div id="copa-castolo" class="p-4 border-l-4 border-purple-500 bg-purple-50 rounded-r-md">
+                    <h4 class="font-bold text-gray-800">Copa Castolo</h4>
+                    <p class="text-sm text-gray-700">Eliminatoria directa. El campeón de la Copa Navidad entra directamente en semifinales y el ganador obtiene recompensas para la siguiente temporada.</p>
+                </div>
+                <div id="liga-camareros" class="p-4 border-l-4 border-green-500 bg-green-50 rounded-r-md">
+                    <h4 class="font-bold text-gray-800">Liga Camareros</h4>
+                    <p class="text-sm text-gray-700">Los presidentes se dividen en 2 grupos. La puntuación de cada grupo es la media de sus miembros. El grupo perdedor tendrá que servir bebidas al grupo ganador durante la fiesta final.</p>
+                </div>
+                <div id="liga-amistad" class="p-4 border-l-4 border-yellow-500 bg-yellow-50 rounded-r-md">
+                    <h4 class="font-bold text-gray-800">Liga de la Amistad</h4>
+                    <p class="text-sm text-gray-700">Los presidentes se dividen en 3 equipos. El equipo con menos puntos al final de la temporada será el "Campeón de la Amistad" y deberá estar esposado durante una hora en la fiesta final.</p>
+                </div>
+            </div>
 
             <!-- Normas para escribir comunicados -->
             <h3 id="normas-comunicados" class="font-header">3. Normas para Comunicados</h3>
             <ul>
-                <li>Si quieres publicar un "dato curioso", el título debe empezar por <strong>"DATO - "</strong> o <strong>"DATOS - "</strong>. Aparecerá en la sección <a href="{{ url_for('salseo', season=season, tab='datos') }}" class="text-green-700 hover:underline">Salseo (Mr. Lucen)</a>.</li>
-                <li>Para registrar una cesión, el título del mensaje debe empezar por <strong>"CESIÓN - "</strong>. Aparecerá en la sección <a href="{{ url_for('salseo', season=season, tab='cesiones') }}" class="text-green-700 hover:underline">Salseo (Cesiones)</a>.</li>
+                <li>Si quieres publicar una crónica, el título debe empezar por <strong>"CRÓNICA - "</strong>. Aparecerá en <a href="{{ url_for('salseo', season=season, tab='cronicas') }}" class="text-green-700 hover:underline">Salseo (Crónicas)</a>.</li>
+                <li>Si quieres publicar un "dato curioso", el título debe empezar por <strong>"DATO - "</strong> o <strong>"DATOS - "</strong>. Aparecerá en <a href="{{ url_for('salseo', season=season, tab='datos') }}" class="text-green-700 hover:underline">Salseo (Mr. Lucen)</a>.</li>
+                <li>Para registrar una cesión, el título del mensaje debe empezar por <strong>"CESIÓN - "</strong>. Aparecerá en <a href="{{ url_for('salseo', season=season, tab='cesiones') }}" class="text-green-700 hover:underline">Salseo (Cesiones)</a>.</li>
                 <li>El resto de mensajes se considerarán comunicados oficiales y aparecerán en la <a href="{{ url_for('comunicados', season=season) }}" class="text-green-700 hover:underline">página principal</a>.</li>
             </ul>
 
