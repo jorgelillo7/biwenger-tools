@@ -1,0 +1,5 @@
+requests
+beautifulsoup4
+Unidecode
+selenium
+webdriver-manager
