@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 # Carga las variables del archivo .env si existe (para desarrollo local)
 load_dotenv()
 
+CLIENT_SECRETS_PATH = "/gdrive_client/client_secrets.json"
+TOKEN_PATH = "/gdrive_token/token.json"
+
 # --- CONFIGURACIÓN DE TEMPORADA ---
 TEMPORADA_ACTUAL = "25-26"
 # Lista de todas las temporadas disponibles para mostrar en el menú.

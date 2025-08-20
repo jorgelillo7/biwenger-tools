@@ -26,18 +26,50 @@ app.config['SECRET_KEY'] = config.SECRET_KEY
 # --- FUNCIONES ---
 
 def get_google_service(service_name, version):
-    """Función genérica para autenticar y crear un servicio de Google (Drive o Sheets)."""
+    """
+    Función genérica para autenticar y crear un servicio de Google.
+    Maneja la creación y actualización automática del token.
+    """
     creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', config.SCOPES)
+    # Prioriza la ruta del secreto si existe, si no, usa el archivo local.
+    token_file = config.TOKEN_PATH if os.path.exists(config.TOKEN_PATH) else 'token.json'
+    client_secrets_file = config.CLIENT_SECRETS_PATH if os.path.exists(config.CLIENT_SECRETS_PATH) else 'client_secrets.json'
+
+    # 1. Intenta cargar las credenciales desde token.json
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file, config.SCOPES)
+
+    # 2. Si no hay credenciales válidas, las crea o las refresca.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json', config.SCOPES)
+            print("ℹ️  El token de acceso de la web ha caducado. Refrescando automáticamente...")
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"❌ Error al refrescar el token: {e}. Se requiere una nueva autenticación.")
+                # Si el refresh_token es inválido, eliminamos el token para forzar un nuevo login.
+                if os.path.exists(token_file):
+                    os.remove(token_file)
+                creds = None
+        
+        # Si después de intentar refrescar, seguimos sin credenciales válidas, re-autenticamos.
+        if not creds or not creds.valid:
+            print("▶️  Iniciando flujo de autenticación (se necesita intervención manual).")
+            if not os.path.exists(client_secrets_file):
+                raise FileNotFoundError(f"El archivo de secretos de cliente '{client_secrets_file}' es necesario.")
+            flow = InstalledAppFlow.from_client_secrets_file(client_secrets_file, config.SCOPES)
             creds = flow.run_local_server(port=0)
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+        
+            # 3. Guarda las credenciales (nuevas o refrescadas) en token.json para futuros usos.
+            try:
+                # Solo intentamos escribir si no estamos en un entorno de solo lectura (como el de los secretos de Cloud Run)
+                if not os.path.exists(config.TOKEN_PATH):
+                    with open(token_file, 'w') as token:
+                        token.write(creds.to_json())
+                    print("✅ Nuevo token de la web guardado en 'token.json'.")
+            except Exception as e:
+                print(f"⚠️  No se pudo reescribir el archivo del token en la web (esto es normal en Cloud Run): {e}")
+
     return build(service_name, version, credentials=creds)
 
 def find_file_id_by_name(service, folder_id, filename):

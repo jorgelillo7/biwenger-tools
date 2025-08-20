@@ -32,28 +32,51 @@ def read_secret_from_file(secret_path):
 # --- FUNCIONES DE GOOGLE DRIVE ---
 
 def get_gdrive_service_oauth():
-    """Autentica con Google Drive usando la configuración de config.py."""
+    """
+    Autentica con Google Drive.
+    Maneja la creación y actualización automática del token.
+    """
     creds = None
+    # Prioriza la ruta del secreto si existe, si no, usa el archivo local.
     token_file = config.TOKEN_PATH if os.path.exists(config.TOKEN_PATH) else 'token.json'
     client_secrets_file = config.CLIENT_SECRETS_PATH if os.path.exists(config.CLIENT_SECRETS_PATH) else 'client_secrets.json'
 
+    # 1. Intenta cargar las credenciales desde token.json
     if os.path.exists(token_file):
         creds = Credentials.from_authorized_user_file(token_file, config.SCOPES)
 
+    # 2. Si no hay credenciales válidas, las crea o las refresca.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            print("ℹ️  El token de acceso ha caducado. Refrescando automáticamente...")
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"❌ Error al refrescar el token: {e}. Se requiere una nueva autenticación.")
+                # Si el refresh_token es inválido, eliminamos el token para forzar un nuevo login.
+                if os.path.exists(token_file):
+                    os.remove(token_file)
+                creds = None
+        
+        # Si después de intentar refrescar, seguimos sin credenciales válidas, re-autenticamos.
+        if not creds or not creds.valid:
+            print("▶️  Iniciando flujo de autenticación (se necesita intervención manual).")
             if not os.path.exists(client_secrets_file):
-                raise FileNotFoundError(f"El archivo '{client_secrets_file}' es necesario.")
+                raise FileNotFoundError(f"El archivo de secretos de cliente '{client_secrets_file}' es necesario para la primera autenticación.")
             flow = InstalledAppFlow.from_client_secrets_file(client_secrets_file, config.SCOPES)
             creds = flow.run_local_server(port=0)
-        try:
-            with open(token_file, 'w') as token:
-                token.write(creds.to_json())
-        except Exception as e:
-            print(f"⚠️  No se pudo reescribir el token.json: {e}")
+        
+            # 3. Guarda las credenciales (nuevas o refrescadas) en token.json para futuros usos.
+            try:
+                # Solo intentamos escribir si no estamos en un entorno de solo lectura (como el de los secretos de Cloud Run)
+                if not os.path.exists(config.TOKEN_PATH):
+                    with open(token_file, 'w') as token:
+                        token.write(creds.to_json())
+                    print("✅ Nuevo token guardado en 'token.json'.")
+            except Exception as e:
+                print(f"⚠️  No se pudo reescribir el archivo del token (esto es normal en Cloud Run): {e}")
 
+    # 4. Construye y devuelve el servicio de la API de Drive.
     service = build('drive', 'v3', credentials=creds)
     return service
 
