@@ -34,13 +34,6 @@ Una vez activado el entorno, puedes instalar todas las dependencias con el archi
 pip3 install -r requirements.txt
 ```
 
-opción 2
-
-```bash
-pip3 install selenium --break-system-packages
-pip3 install webdriver-manager --break-system-packages
-```
-
 ### 3. Archivo de Configuración
 
 Antes de ejecutar el script, necesitas configurar tus datos personales.
