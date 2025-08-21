@@ -7,36 +7,18 @@ Esta guía detalla los pasos para configurar y ejecutar el proyecto tanto en un 
 Pasos para configurar y ejecutar el script `get_messages.py` en tu máquina.
 
 ### 1. Instalación de Dependencias
+```bash
+# Crea un entorno virtual (solo la primera vez)
+python3 -m venv venv
 
-Se recomienda usar un entorno virtual (venv). Para instalar todas las librerías necesarias, crea un archivo `requirements.txt` con el siguiente contenido y luego ejecuta el comando pip install.
+# Activa el entorno (en macOS/Linux)
+source venv/bin/activate
 
-**requirements.txt**
-```
-requests
-beautifulsoup4
-google-api-python-client
-google-auth-httplib2
-google-auth-oauthlib
-python-dotenv
-google-cloud-secret-manager
-google-auth
-Unidecode
+# En Windows usa: venv\Scripts\activate
 ```
 
 ```bash
-pip install -r requirements.txt
-```
-
-o a mano
-
-```
-pip3 install requests --break-system-packages
-pip3 install beautifulsoup4 --break-system-packages
-pip3 install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib --break-system-packages
-pip3 install python-dotenv --break-system-packages
-pip3 install google-cloud-secret-manager --break-system-packages
-pip3 install google-auth --break-system-packages
-pip3 install Unidecode --break-system-packages
+pip3 install -r requirements.txt
 ```
 
 ### 2. Configuración de Google API (Solo la primera vez)

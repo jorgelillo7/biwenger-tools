@@ -114,7 +114,7 @@ def categorize_title(title):
     # Comparamos sin acentos para "CRONICA" y "CESION"
     normalized_title = unidecode.unidecode(clean_title)
     
-    if normalized_title.startswith("CRONICA -"):
+    if normalized_title.startswith("CRONICA -") or normalized_title.startswith("CRONICAS"):
         return "cronica"
     if clean_title.startswith("DATO -") or clean_title.startswith("DATOS -"):
         return "dato"
