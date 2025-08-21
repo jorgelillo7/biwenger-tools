@@ -1,10 +1,17 @@
 ## 🏠 Entorno Local (Scraper)
 ### 1. Instalación de Dependencias
 ```bash
-pip3 install Flask --break-system-packages
-pip3 install python-dateutil --break-system-packages
-pip3 install pytz --break-system-packages
+# Crea un entorno virtual (solo la primera vez)
+python3 -m venv venv
 
+# Activa el entorno (en macOS/Linux)
+source venv/bin/activate
+
+# En Windows usa: venv\Scripts\activate
+```
+
+```bash
+pip3 install -r requirements.txt
 ```
 
 ### 2. Ejecución
