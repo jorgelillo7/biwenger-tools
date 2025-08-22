@@ -10,14 +10,23 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
 
-# Importaciones necesarias para que la función sea autocontenida
 from .. import config
 from .player_matching import normalize_name
 
-def fetch_jp_player_tips(url):
-    # Asumo que esta función ya la tienes definida en otra parte, la incluyo como placeholder
-    print(f"▶️  (Placeholder) Descargando consejos de Jornada Perfecta desde {url}...")
-    return {}
+def fetch_jp_player_tips():
+    print("▶️  Descargando recomendaciones de Jornada Perfecta...")
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'}
+    response = requests.get(config.JORNADA_PERFECTA_MERCADO_URL, headers=headers, verify=False)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'html.parser')
+    script_tag = soup.find('script', string=re.compile(r'\s*const marketCaching=\['))
+    if not script_tag: raise Exception("No se pudo encontrar el script 'marketCaching' en la página de Jornada Perfecta.")
+    script_content = script_tag.string
+    json_str = re.search(r'const marketCaching=(\[.*\]);', script_content, re.DOTALL).group(1)
+    jp_data = json.loads(json_str)
+    jp_tips_map = {normalize_name(player.get('name', '')): player.get('tip', 'N/A') for player in jp_data}
+    print(f"✅ Base de datos de Jornada Perfecta con {len(jp_tips_map)} recomendaciones creada.")
+    return jp_tips_map
 
 def fetch_analitica_fantasy_coeffs():
     """
@@ -26,10 +35,10 @@ def fetch_analitica_fantasy_coeffs():
     """
     print("▶️  Descargando coeficientes de Analítica Fantasy (usando Selenium)...")
     chrome_options = Options()
-    
+
     # Para ejecutar en segundo plano, quita el '#' de la siguiente línea
     chrome_options.add_argument("--headless")
-    
+
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:128.0) Gecko/20100101 Firefox/128.0")
@@ -37,10 +46,10 @@ def fetch_analitica_fantasy_coeffs():
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    
+
     coeffs_map = {}
     try:
-        # La URL se obtiene directamente desde el archivo de configuración
+
         driver.get(config.ANALITICA_FANTASY_URL)
         print("    ...esperando a que la página cargue...")
         wait = WebDriverWait(driver, 30)
@@ -52,7 +61,7 @@ def fetch_analitica_fantasy_coeffs():
             time.sleep(2)
         except TimeoutException:
             print("⚠️  No se encontró el botón de cookies. Continuando...")
-        
+
         print("    -> Sincronizando con la tabla de datos...")
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "tr.MuiTableRow-root")))
         print("✅ Tabla de datos cargada.")
@@ -65,10 +74,10 @@ def fetch_analitica_fantasy_coeffs():
 
             page_size_dropdown_xpath = "//label[text()='Elementos por página']/following-sibling::div/div[@role='combobox']"
             page_size_dropdown = wait.until(EC.element_to_be_clickable((By.XPATH, page_size_dropdown_xpath)))
-            
+
             actions = ActionChains(driver)
             actions.move_to_element(page_size_dropdown).click().perform()
-            
+
             option_50_xpath = "//ul[@role='listbox']/li[@data-value='50']"
             option_50 = wait.until(EC.element_to_be_clickable((By.XPATH, option_50_xpath)))
             option_50.click()
@@ -87,7 +96,7 @@ def fetch_analitica_fantasy_coeffs():
             if not player_rows:
                 print("    -> No se encontraron más filas de jugadores.")
                 break
-            
+
             for row in player_rows:
                 try:
                     cells = row.find_elements(By.TAG_NAME, "td")
@@ -95,20 +104,20 @@ def fetch_analitica_fantasy_coeffs():
                         player_name = cells[1].find_element(By.CSS_SELECTOR, "p.MuiTypography-root").text.strip()
                         coefficient = cells[2].find_element(By.CSS_SELECTOR, "p.MuiTypography-root").text.strip()
                         expected_score = cells[6].text.strip().replace('\n', ' / ')
-                        
+
                         if player_name and coefficient:
                             normalized_name = normalize_name(player_name)
                             coeffs_map[normalized_name] = {'coeficiente': coefficient, 'puntuacion_esperada': expected_score}
                 except (NoSuchElementException, IndexError):
                     continue
-            
+
             try:
                 next_button_xpath = "//button[contains(., 'Siguiente')]"
                 next_button_element = driver.find_element(By.XPATH, next_button_xpath)
                 if not next_button_element.is_enabled():
                     print("    -> El botón 'Siguiente' está desactivado. Fin del scraping.")
                     break
-                
+
                 driver.execute_script("arguments[0].scrollIntoView(true);", next_button_element)
                 time.sleep(1)
                 driver.execute_script("arguments[0].click();", next_button_element)

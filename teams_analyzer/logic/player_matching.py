@@ -1,11 +1,15 @@
-# teams_analyzer/logic/player_matching.py
 from unidecode import unidecode
 
 # Este mapa es específico para la lógica de este analizador.
 PLAYER_NAME_MAPPINGS = {
-    'odysseas': 'vlachodimos', 'sancet': 'oihan sancet', 'carlos vicente': 'c. vicente',
-    'javier rueda': 'javi rueda', 'javi': 'javier', 'brugue': 'brugui',
-    'nacho': 'ignacio', 'alhassane': 'rahim',
+    'odysseas': 'vlachodimos',
+    'sancet': 'oihan sancet',
+    'carlos vicente': 'c. vicente',
+    'javier rueda': 'javi rueda',
+    'javi': 'javier',
+    'brugue': 'brugui',
+    'nacho': 'ignacio',
+    'alhassane': 'rahim',
 }
 
 def normalize_name(name):

@@ -1,4 +1,3 @@
-# config.py
 import os
 from dotenv import load_dotenv
 
@@ -6,7 +5,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- CONFIGURACIÓN DE TEMPORADA ---
-# CAMBIO PRINCIPAL: Define la temporada activa.
 # Para empezar un nuevo año, solo tienes que cambiar este valor (ej. "26-27").
 TEMPORADA_ACTUAL = "25-26"
 

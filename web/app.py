@@ -1,16 +1,12 @@
-# web/app.py
-from flask import Flask, render_template, request, session, redirect, url_for, flash, g
 import os
+import pytz
+import ssl
+from collections import defaultdict
 from datetime import datetime, timedelta
 from dateutil import parser
-import pytz
-from collections import defaultdict
-import ssl # Importar la librería SSL para un manejo de errores más específico
+from flask import Flask, render_template, request, session, redirect, url_for, flash, g
 
-# Importa la configuración local
 from . import config
-
-# Importa los servicios reutilizables desde 'core'
 from core.gcp_services import get_google_service, find_file_on_drive, download_csv_as_dict, get_sheets_data
 from core.utils import get_file_metadata
 
@@ -30,7 +26,7 @@ try:
     # Determine which file paths to use
     client_secrets_file = config.CLIENT_SECRETS_PATH if os.path.exists(config.CLIENT_SECRETS_PATH) else local_secrets_path
     token_file = config.TOKEN_PATH if os.path.exists(config.TOKEN_PATH) else local_token_path
-    
+
     # Initialize Google services
     drive_service = get_google_service('drive', 'v3', token_file, client_secrets_file, config.SCOPES)
     sheets_service = get_google_service('sheets', 'v4', token_file, client_secrets_file, config.SCOPES)
@@ -61,7 +57,7 @@ def manage_season():
     # Esto evita que peticiones como /favicon.ico o /robots.txt sobrescriban la sesión.
     if season_from_url and '-' in season_from_url:
         session['current_season'] = season_from_url
-    
+
     # Finalmente, establecemos g.season a partir del valor de la sesión.
     # g.season será utilizado por todas las rutas durante esta única petición.
     g.season = session['current_season']
@@ -99,15 +95,15 @@ def comunicados(season):
         file_metadata = find_file_on_drive(drive_service, filename, config.GDRIVE_FOLDER_ID)
         if not file_metadata:
             raise FileNotFoundError(f"El archivo '{filename}' no se encontró en Google Drive.")
-        
+
         all_messages = download_csv_as_dict(drive_service, file_metadata['id'])
 
         comunicados_only = [m for m in all_messages if m.get('categoria', '').strip() == 'comunicado']
-        
+
         page = request.args.get('page', 1, type=int)
         start = (page - 1) * config.MESSAGES_PER_PAGE
         end = start + config.MESSAGES_PER_PAGE
-        
+
         paginated_messages = comunicados_only[start:end]
         total_pages = (len(comunicados_only) + config.MESSAGES_PER_PAGE - 1) // config.MESSAGES_PER_PAGE
     except ssl.SSLError as e:
@@ -117,10 +113,10 @@ def comunicados(season):
         error = f"Ocurrió un error al cargar los comunicados de la temporada {g.season}: {e}"
         print(error)
 
-    return render_template('index.html', 
-                           messages=paginated_messages, 
+    return render_template('index.html',
+                           messages=paginated_messages,
                            all_comunicados=comunicados_only,
-                           error=error, 
+                           error=error,
                            active_page='comunicados',
                            current_page=page,
                            total_pages=total_pages,
@@ -156,11 +152,11 @@ def salseo(season):
         error = f"Ocurrió un error al cargar los datos de la temporada {g.season}: {e}"
         print(error)
 
-    return render_template('salseo.html', 
-                           datos=datos_curiosos, 
+    return render_template('salseo.html',
+                           datos=datos_curiosos,
                            cesiones=cesiones,
                            cronicas=cronicas,
-                           error=error, 
+                           error=error,
                            active_page='salseo',
                            season=g.season,
                            temporada_actual=config.TEMPORADA_ACTUAL,
@@ -179,7 +175,7 @@ def participacion(season):
         file_metadata = find_file_on_drive(drive_service, filename, config.GDRIVE_FOLDER_ID)
         if not file_metadata:
             raise FileNotFoundError(f"El archivo '{filename}' no se encontró en Google Drive.")
-        
+
         participation_data = download_csv_as_dict(drive_service, file_metadata['id'])
 
         for row in participation_data:
@@ -187,7 +183,7 @@ def participacion(season):
             datos_count = len(row.get('datos', '').split(';')) if row.get('datos') else 0
             cesiones_count = len(row.get('cesiones', '').split(';')) if row.get('cesiones') else 0
             cronicas_count = len(row.get('cronicas', '').split(';')) if row.get('cronicas') else 0
-            
+
             stats.append({
                 'autor': row['autor'],
                 'comunicados': comunicados_count,
@@ -203,10 +199,10 @@ def participacion(season):
     except Exception as e:
         error = f"Ocurrió un error al calcular las estadísticas de la temporada {g.season}: {e}"
         print(error)
-        
-    return render_template('participacion.html', 
-                           stats=stats, 
-                           error=error, 
+
+    return render_template('participacion.html',
+                           stats=stats,
+                           error=error,
                            active_page='participacion',
                            season=g.season,
                            temporada_actual=config.TEMPORADA_ACTUAL,
@@ -224,7 +220,7 @@ def ligas_especiales(season):
         sheet_id = config.LIGAS_ESPECIALES_SHEETS.get(g.season)
         if not sheet_id:
             raise ValueError(f"No hay una hoja de Ligas Especiales configurada para la temporada {g.season}.")
-        
+
         leagues = get_sheets_data(sheets_service, sheet_id)
     except ssl.SSLError as e:
         error = f"Error de SSL al conectar con Google Sheets. Puede ser un problema con tu red o certificados locales. ({e})"
@@ -232,10 +228,10 @@ def ligas_especiales(season):
     except Exception as e:
         error = f"Ocurrió un error al cargar las ligas especiales: {e}"
         print(error)
-        
-    return render_template('ligas_especiales.html', 
-                           leagues=leagues, 
-                           error=error, 
+
+    return render_template('ligas_especiales.html',
+                           leagues=leagues,
+                           error=error,
                            active_page='ligas-especiales',
                            season=g.season,
                            temporada_actual=config.TEMPORADA_ACTUAL,
@@ -256,14 +252,14 @@ def palmares():
         file_metadata = find_file_on_drive(drive_service, config.PALMARES_FILENAME, config.GDRIVE_FOLDER_ID)
         if not file_metadata:
             raise FileNotFoundError(f"El archivo '{config.PALMARES_FILENAME}' no se encontró en Google Drive.")
-        
+
         palmares_data = download_csv_as_dict(drive_service, file_metadata['id'])
 
         for row in palmares_data:
             season_data = row.get('temporada', '').strip()
             category = row.get('categoria', '').strip()
             value = row.get('valor', '').strip()
-            
+
             if not season_data or not category: continue
             if category in ['multa', 'sancion', 'farolillo']:
                  seasons[season_data]['otros'].append({'tipo': category, 'valor': value})
@@ -277,10 +273,10 @@ def palmares():
         error = f"Ocurrió un error al cargar el palmarés: {e}"
         print(error)
         sorted_seasons = []
-        
-    return render_template('palmares.html', 
-                           seasons=sorted_seasons, 
-                           error=error, 
+
+    return render_template('palmares.html',
+                           seasons=sorted_seasons,
+                           error=error,
                            active_page='palmares',
                            season=g.season,
                            temporada_actual=config.TEMPORADA_ACTUAL,
@@ -303,7 +299,7 @@ def reglamento():
         error = f"Ocurrió un error al cargar los datos para el índice: {e}"
         print(error)
 
-    return render_template('reglamento.html', 
+    return render_template('reglamento.html',
                            leagues=leagues,
                            error=error,
                            active_page='reglamento',
@@ -320,10 +316,10 @@ def admin():
         try:
             if not drive_service:
                 raise Exception("El servicio de Google Drive no está disponible.")
-            
+
             comunicados_actual = f"{config.COMUNICADOS_FILENAME_BASE}_{g.season}.csv"
             participacion_actual = f"{config.PARTICIPACION_FILENAME_BASE}_{g.season}.csv"
-            
+
             filenames_to_check = [comunicados_actual, participacion_actual, config.PALMARES_FILENAME]
             dynamic_files = [comunicados_actual, participacion_actual] 
 
@@ -336,7 +332,7 @@ def admin():
                 dt_utc = parser.isoparse(sheet_metadata['modifiedTime'])
                 dt_madrid = dt_utc.astimezone(pytz.timezone('Europe/Madrid'))
                 formatted_date = dt_madrid.strftime('%d-%m-%Y a las %H:%M:%S')
-                
+
                 is_stale = (datetime.now(pytz.timezone('Europe/Madrid')) - dt_madrid) > timedelta(days=7)
 
                 file_statuses.append({
@@ -351,26 +347,26 @@ def admin():
             print(error)
         except Exception as e:
             error = f"No se pudo conectar con Google Drive para obtener el estado de los archivos: {e}"
-        
+
         log_url = f"https://console.cloud.google.com/run/jobs/details/{config.CLOUD_RUN_REGION}/{config.CLOUD_RUN_JOB_NAME}/logs?project={config.GCP_PROJECT_ID}"
 
-        return render_template('admin_panel.html', 
-                               active_page='admin', 
-                               file_statuses=file_statuses, 
+        return render_template('admin_panel.html',
+                               active_page='admin',
+                               file_statuses=file_statuses,
                                log_url=log_url,
                                error=error,
                                season=g.season,
                                temporada_actual=config.TEMPORADA_ACTUAL,
                                temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
-    
+
     if request.method == 'POST':
         if request.form.get('password') == config.ADMIN_PASSWORD:
             session['admin_logged_in'] = True
             return redirect(url_for('admin'))
         else:
             flash('Contraseña incorrecta. Inténtalo de nuevo.', 'error')
-    
-    return render_template('admin_login.html', 
+
+    return render_template('admin_login.html',
                            active_page='admin',
                            season=g.season,
                            temporada_actual=config.TEMPORADA_ACTUAL,

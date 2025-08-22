@@ -38,12 +38,12 @@ Sigue estos pasos para permitir que el script acceda a tu Google Drive.
 - Crea una carpeta en tu Google Drive para los CSVs.
 - Copia el ID de la carpeta desde la URL y pégalo en el archivo `.env` del scraper.
 
-### 3. Ejecución
+### 3. Ejecución (desde raiz)
 
 La primera vez que ejecutes el script, se abrirá un navegador para que autorices el acceso a tu cuenta de Google. Esto creará un archivo `token.json` que se usará en las siguientes ejecuciones.
 
 ```bash
-python3 get_messages.py
+python3 -m scraper-job.get_messages
 ```
 
 ## 🚀 Despliegue en Google Cloud

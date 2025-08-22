@@ -1,8 +1,13 @@
 # ⚽ Analizador de Equipos Biwenger
 
-Este proyecto contiene un script de Python (`teams_analyzer.py`) diseñado para extraer y analizar datos de tu liga de Biwenger. Utiliza `requests` para interactuar con la API de Biwenger y `Selenium` para hacer scraping de datos avanzados de webs de análisis fantasy como "Analítica Fantasy" y "Jornada Perfecta".
+Este proyecto contiene un conjunto de herramientas de Python diseñadas para extraer, analizar y notificar datos de tu liga de Biwenger. Utiliza `requests` para interactuar con la API de Biwenger y `Selenium` para hacer scraping de datos avanzados de webs de análisis fantasy como "Analítica Fantasy" y "Jornada Perfecta".
 
-El objetivo es obtener un CSV con datos de la competencia para la toma de decisiones importantes. El resultado final es un archivo (`analisis_biwenger.csv`) con un resumen completo de todos los jugadores de tu liga (y del mercado), enriquecido con datos externos.
+El objetivo es obtener un CSV con datos de la competencia para la toma de decisiones, y ahora también, **recibir este análisis directamente en tu chat de Telegram**.
+
+## 🚀 Funcionalidades Principales
+
+1.  **Análisis Completo**: Genera un archivo (`analisis_biwenger.csv`) con un resumen de todos los jugadores de tu liga y del mercado, enriquecido con datos externos.
+2.  **Notificación por Telegram**: Envía automáticamente el archivo CSV generado a un chat de Telegram para que puedas consultarlo desde cualquier lugar.
 
 ## 🏠 Puesta en Marcha Local
 
@@ -10,29 +15,21 @@ Sigue estos pasos para configurar y ejecutar el analizador en tu máquina.
 
 ### 1. Requisitos Previos
 
-- **Python 3**: Asegúrate de tener Python 3 instalado en tu sistema.
-- **Google Chrome**: El script utiliza Selenium con ChromeDriver, por lo que necesitas tener Google Chrome instalado.
+-   **Python 3**: Asegúrate de tener Python 3 instalado.
+-   **Google Chrome**: El script utiliza Selenium con ChromeDriver, por lo que necesitas tener Google Chrome instalado.
 
 ### 2. Instalación de Dependencias
 
-Se recomienda encarecidamente trabajar dentro de un entorno virtual (venv) para evitar conflictos de librerías.
+Se recomienda encarecidamente trabajar dentro de un entorno virtual (`venv`).
 
 ```bash
-# Crea un entorno virtual (solo la primera vez)
+# 1. Crea y activa un entorno virtual
 python3 -m venv venv
-
-# Activa el entorno (en macOS/Linux)
 source venv/bin/activate
+# En Windows: venv\Scripts\activate
 
-# En Windows usa: venv\Scripts\activate
-```
-
-Una vez activado el entorno, puedes instalar todas las dependencias con el archivo `requirements.txt`
-
-```bash
-# Instala todas las dependencias del archivo
+# 2. Instala todas las dependencias
 pip3 install -r requirements.txt
-```
 
 ### 3. Archivo de Configuración
 
@@ -45,23 +42,52 @@ Antes de ejecutar el script, necesitas configurar tus datos personales.
 ```bash
 BIWENGER_EMAIL = "YOUR_EMAIL"
 BIWENGER_PASSWORD = "YOUR_PASS"
+# --- Configuración de Telegram (Opcional) ---
+# Si dejas estos campos vacíos, el script no intentará enviar la notificación.
+
+# 1. El token de tu Bot (obtenido de BotFather)
+TELEGRAM_BOT_TOKEN = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+
+# 2. El ID de tu chat (puedes obtenerlo de bots como @userinfobot)
+TELEGRAM_CHAT_ID = "123456789"
 ```
 
-### 4. Ejecución del Script
+¿Cómo obtener los datos de Telegram?
+1. Crea un Bot: Habla con @BotFather en Telegram. Usa el comando /newbot, dale un nombre y te proporcionará el TELEGRAM_BOT_TOKEN.
 
-Ya puedes ejecutar el analizador.
+2. Obtén tu Chat ID: usa tu bot_token con la siguiente URL:
+https://api.telegram.org/bot[TELEGRAM_BOT_TOKEN]/getUpdates (quitar [])
+
+te saldrá algo similar a si lo haces en un grupo, o si es a un chat privado también saldrá el id
+```
+"chat": {
+    "id": -1111111111,
+    "title": "Teams Analyzer",
+    "type": "group",
+    "all_members_are_administrators": true,
+    "accepted_gift_types": {
+    "unlimited_gifts": false,
+    "limited_gifts": false,
+    "unique_gifts": false,
+    "premium_subscription": false
+}
+```
+
+### 4. Ejecución del Script (desde raiz)
+
+Una vez configurado, ejecuta el analizador desde la raíz de tu proyecto:
 
 ```bash
-python3 teams_analyzer.py
+python3 -m teams_analyzer.teams_analyzer
 ```
 
-El script comenzará a mostrar su progreso en la terminal. Selenium podría abrir una ventana de Chrome para realizar el scraping (dependiendo de si el modo headless está activado).
+El script mostrará su progreso en la terminal. Si la configuración de Telegram es correcta, al finalizar recibirás el archivo CSV en tu chat.
 
 ## 📂 Archivos Generados
 
 Al finalizar la ejecución, encontrarás dos nuevos archivos CSV en tu carpeta:
 
-- **`squads_export.csv`**: El informe principal. Contiene la lista de todos los jugadores de la liga y del mercado, con su valor, cláusula y los datos de análisis extraídos.
+- **`squads_export.csv`**: El informe principal con la lista de todos los jugadores, su valor, cláusula y los datos de análisis extraídos.
 
 - **`analitica_fantasy_data.csv`**: Un archivo de respaldo con los datos en crudo obtenidos de "Analítica Fantasy". Es útil para verificar que el scraping ha funcionado correctamente.
 
@@ -82,13 +108,3 @@ PLAYER_NAME_MAPPINGS = {
 ## ⚠️ Notas Importantes
 
 - **Modo Headless**: Para que el script se ejecute más rápido y sin abrir una ventana de navegador, puedes activar el modo headless en la función `fetch_analitica_fantasy_coeffs` del script, quitando el `#` de la línea `# chrome_options.add_argument("--headless")`.
-
----
-
-## 📊 Flujo de Datos
-
-1. **Autenticación** → Login en Biwenger con tus credenciales
-2. **Extracción de datos** → Obtiene información de jugadores, mercado y liga
-3. **Scraping externo** → Enriquece los datos con información de webs de análisis
-4. **Procesamiento** → Combina y procesa toda la información
-5. **Exportación** → Genera el CSV final con el análisis completo

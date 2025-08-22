@@ -1,7 +1,7 @@
 import os
+import pytz
 from datetime import datetime, timedelta
 from dateutil import parser
-import pytz
 
 def read_secret_from_file(secret_path, fallback=None):
     """
@@ -22,12 +22,12 @@ def get_file_metadata(service, folder_id, filenames, dynamic_files):
         query = f"name = '{name}' and '{folder_id}' in parents and trashed=false"
         response = service.files().list(q=query, spaces='drive', fields='files(id, name, modifiedTime)').execute()
         file = response.get('files', [])[0] if response.get('files') else None
-        
+
         if file:
             dt_utc = parser.isoparse(file['modifiedTime'])
             dt_madrid = dt_utc.astimezone(pytz.timezone('Europe/Madrid'))
             formatted_date = dt_madrid.strftime('%d-%m-%Y a las %H:%M:%S')
-            
+
             is_stale = False
             # Comprueba si el archivo debe ser revisado y si tiene más de 7 días
             if name in dynamic_files and (now_madrid - dt_madrid) > timedelta(days=7):

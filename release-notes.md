@@ -2,6 +2,18 @@
 
 Aquí se documenta la increíble y a veces caótica evolución de nuestro pequeño gran proyecto para inmortalizar el salseo de la liga.
 
+### **v3.0 - El Espía Táctico y el Arquitecto (22 de Agosto, 2025)**
+
+Una actualización mayor que no solo introduce una nueva herramienta de análisis, sino que también reconstruye los cimientos del proyecto para hacerlo más robusto y escalable.
+
+* **🚀 Nuevo Módulo `teams-analyzer`**: Se introduce una nueva herramienta independiente para el análisis táctico profundo de la liga, diseñada para ser ejecutada localmente.
+* **🕵️ Scraping Avanzado con Selenium**: El analizador extrae datos de rendimiento y coeficientes de webs especializadas como "Analítica Fantasy" y "Jornada Perfecta".
+* **📊 Análisis 360º**: El script evalúa todas las plantillas de la liga y los jugadores libres en el mercado, ofreciendo una visión completa de la competencia.
+* **📬 Notificaciones por Telegram**: Al finalizar, el script envía automáticamente el informe `analisis_biwenger.csv` a un chat de Telegram configurado.
+* **🏗️ Gran Refactor Arquitectónico**: ¡Un hito clave! Se realiza una reestructuración profunda del código para crear módulos reutilizables en los directorios `core` (para clientes de APIs como Biwenger y Google) y `logic` (para el procesamiento de datos). Este cambio reduce drásticamente la duplicación de código, mejora la mantenibilidad y sienta las bases para futuras expansiones del proyecto.
+
+---
+
 ### **v2.5 - El Viajero del Tiempo (18 de Agosto, 2025)**
 
 Una actualización fundamental que convierte la web en un archivo histórico, permitiendo navegar entre diferentes temporadas de forma fluida e intuitiva.

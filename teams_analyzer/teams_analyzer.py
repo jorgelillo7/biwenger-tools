@@ -1,14 +1,13 @@
-import time
 import csv
+import time
 import traceback
 from datetime import datetime
 
-# CORRECCIÓN: Se usan importaciones relativas para que funcione al ejecutar como módulo.
 from . import config
-from  core.biwenger_client import BiwengerClient
-from  core.telegram_notifier import send_telegram_notification
 from .logic.scrapers import fetch_jp_player_tips, fetch_analitica_fantasy_coeffs
 from .logic.player_matching import find_player_match, normalize_name, map_position
+from  core.biwenger_client import BiwengerClient
+from  core.telegram_notifier import send_telegram_notification
 
 def main():
     """Orquesta el proceso de análisis de equipos y mercado."""

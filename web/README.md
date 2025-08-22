@@ -14,9 +14,9 @@ source venv/bin/activate
 pip3 install -r requirements.txt
 ```
 
-### 2. Ejecución
+### 2. Ejecución (desde raiz)
 ```bash
-python3 app.py
+python3 -m web.app
 ```
 
 ### 3. Accedemos a la web

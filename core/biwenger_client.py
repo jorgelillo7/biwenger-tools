@@ -1,6 +1,6 @@
-import requests
-import re
 import json
+import re
+import requests
 
 class BiwengerClient:
     """

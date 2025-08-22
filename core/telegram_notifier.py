@@ -1,5 +1,5 @@
-import requests
 import os
+import requests
 
 def send_telegram_notification(api_url_template, bot_token, chat_id, caption, filepath):
     """
