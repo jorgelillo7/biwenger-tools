@@ -47,7 +47,7 @@ def normalize_name(name):
 def find_player_match(biwenger_name, analitica_map):
     """Sistema de búsqueda de jugadores mejorado con el mapa unificado."""
     norm_b_name = normalize_name(biwenger_name)
-    
+
     # 1. Búsqueda por mapeo directo (ej: 'odysseas' -> 'vlachodimos')
     if norm_b_name in PLAYER_NAME_MAPPINGS:
         mapped_name = PLAYER_NAME_MAPPINGS[norm_b_name]
@@ -59,7 +59,7 @@ def find_player_match(biwenger_name, analitica_map):
     for biwenger_part, fa_part in PLAYER_NAME_MAPPINGS.items():
         if biwenger_part in modified_name:
             modified_name = modified_name.replace(biwenger_part, fa_part)
-    
+
     if modified_name in analitica_map:
         return analitica_map[modified_name]
 
@@ -81,6 +81,19 @@ def find_player_match(biwenger_name, analitica_map):
 
     return {'coeficiente': 'N/A', 'puntuacion_esperada': 'N/A'}
 
+def send_telegram_notification(bot_token, chat_id, caption, filepath):
+    """Envía el archivo CSV a un chat de Telegram."""
+    print("\n▶️  Enviando notificación a Telegram...")
+    url = config.TELEGRAM_API_URL.format(token=bot_token)
+    try:
+        with open(filepath, 'rb') as f:
+            files = {'document': (os.path.basename(filepath), f)}
+            data = {'chat_id': chat_id, 'caption': caption}
+            response = requests.post(url, data=data, files=files)
+            response.raise_for_status()
+        print("✅ Notificación enviada a Telegram con éxito.")
+    except Exception as e:
+        print(f"❌ Error al enviar la notificación a Telegram: {e}")
 
 def authenticate_and_get_session(email, password):
     requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
@@ -142,10 +155,10 @@ def fetch_jp_player_tips():
 def fetch_analitica_fantasy_coeffs():
     print("▶️  Descargando coeficientes de Analítica Fantasy (usando Selenium)...")
     chrome_options = Options()
-    
+
     # Para ejecutar en segundo plano, quita el '#' de la siguiente línea
     chrome_options.add_argument("--headless")
-    
+
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:128.0) Gecko/20100101 Firefox/128.0")
@@ -153,7 +166,7 @@ def fetch_analitica_fantasy_coeffs():
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    
+
     coeffs_map = {}
     try:
         driver.get(config.ANALITICA_FANTASY_URL)
@@ -167,7 +180,7 @@ def fetch_analitica_fantasy_coeffs():
             time.sleep(2)
         except TimeoutException:
             print("⚠️  No se encontró el botón de cookies. Continuando...")
-        
+
         print("    -> Sincronizando con la tabla de datos...")
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "tr.MuiTableRow-root")))
         print("✅ Tabla de datos cargada.")
@@ -180,10 +193,10 @@ def fetch_analitica_fantasy_coeffs():
 
             page_size_dropdown_xpath = "//label[text()='Elementos por página']/following-sibling::div/div[@role='combobox']"
             page_size_dropdown = wait.until(EC.element_to_be_clickable((By.XPATH, page_size_dropdown_xpath)))
-            
+
             actions = ActionChains(driver)
             actions.move_to_element(page_size_dropdown).click().perform()
-            
+
             option_50_xpath = "//ul[@role='listbox']/li[@data-value='50']"
             option_50 = wait.until(EC.element_to_be_clickable((By.XPATH, option_50_xpath)))
             option_50.click()
@@ -202,7 +215,7 @@ def fetch_analitica_fantasy_coeffs():
             if not player_rows:
                 print("    -> No se encontraron más filas de jugadores.")
                 break
-            
+
             for row in player_rows:
                 try:
                     cells = row.find_elements(By.TAG_NAME, "td")
@@ -210,20 +223,20 @@ def fetch_analitica_fantasy_coeffs():
                         player_name = cells[1].find_element(By.CSS_SELECTOR, "p.MuiTypography-root").text.strip()
                         coefficient = cells[2].find_element(By.CSS_SELECTOR, "p.MuiTypography-root").text.strip()
                         expected_score = cells[6].text.strip().replace('\n', ' / ')
-                        
+
                         if player_name and coefficient:
                             normalized_name = normalize_name(player_name)
                             coeffs_map[normalized_name] = {'coeficiente': coefficient, 'puntuacion_esperada': expected_score}
                 except (NoSuchElementException, IndexError):
                     continue
-            
+
             try:
                 next_button_xpath = "//button[contains(., 'Siguiente')]"
                 next_button_element = driver.find_element(By.XPATH, next_button_xpath)
                 if not next_button_element.is_enabled():
                     print("    -> El botón 'Siguiente' está desactivado. Fin del scraping.")
                     break
-                
+
                 driver.execute_script("arguments[0].scrollIntoView(true);", next_button_element)
                 time.sleep(1)
                 driver.execute_script("arguments[0].click();", next_button_element)
@@ -270,7 +283,7 @@ def map_position(pos_id):
 def main():
     start_time = time.time()
     print(f"🚀 Script iniciado a las {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    
+
     try:
         if not hasattr(config, 'BIWENGER_EMAIL') or not hasattr(config, 'BIWENGER_PASSWORD') or \
            not config.BIWENGER_EMAIL or not config.BIWENGER_PASSWORD:
@@ -281,7 +294,7 @@ def main():
         players_map = fetch_all_players_data_map()
         jp_tips_map = fetch_jp_player_tips()
         analitica_coeffs_map = fetch_analitica_fantasy_coeffs()
-        
+
         if not analitica_coeffs_map:
              print("\n❌ No se pudieron obtener los datos de Analítica Fantasy. Abortando el resto del proceso.")
              return
@@ -323,7 +336,7 @@ def main():
                         'Coeficiente AF': matched_data['coeficiente'],
                         'Puntuación Esperada AF': matched_data['puntuacion_esperada']
                     })
-        
+
         free_agents = [sale for sale in market_players if sale.get('user') is None]
         market_team_name = f"Mercado_{datetime.now().strftime('%d%m%Y')}"
         print(f"\n🔎 Analizando a: {market_team_name} ({len(free_agents)} jugadores libres)")
@@ -343,10 +356,10 @@ def main():
                 'Coeficiente AF': matched_data['coeficiente'],
                 'Puntuación Esperada AF': matched_data['puntuacion_esperada']
             })
-        
+
         order = {"muyRecomendable": 0, "recomendable": 1, "apuesta": 2, "fondoDeArmario": 3, "parche": 4, "noRecomendable": 5}
         all_players_export_list.sort(key=lambda x: (x['Mánager'].startswith('Mercado_'), x['Mánager'], order.get(x['Nota IA'], 99)))
-        
+
         if all_players_export_list:
             fieldnames = ['Mánager', 'Jugador', 'Posición', 'Valor Actual', 'Cláusula', 'Nota IA', 'Coeficiente AF', 'Puntuación Esperada AF']
             print(f"\n▶️  Escribiendo {len(all_players_export_list)} jugadores en '{config.OUTPUT_FILENAME}'...")
@@ -355,7 +368,16 @@ def main():
                 writer.writeheader()
                 writer.writerows(all_players_export_list)
             print("✅ ¡Exportación completada con éxito!")
-    
+
+            # Enviar notificación a Telegram si está configurado
+            telegram_bot_token = config.TELEGRAM_BOT_TOKEN
+            telegram_chat_id = config.TELEGRAM_CHAT_ID
+            if telegram_bot_token and telegram_chat_id:
+                caption = f"📊 ¡Análisis de equipos completado!\n\n- Jugadores analizados: {len(all_players_export_list)}\n- Fecha: {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}"
+                send_telegram_notification(telegram_bot_token, telegram_chat_id, caption, config.OUTPUT_FILENAME)
+            else:
+                print("\nℹ️  No se ha configurado la notificación de Telegram (faltan TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID).")
+
     except Exception as e:
         print(f"❌ Ocurrió un error inesperado en la ejecución principal: {e}")
         traceback.print_exc()
