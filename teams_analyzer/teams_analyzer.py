@@ -1,4 +1,5 @@
 import csv
+import os
 import time
 import traceback
 from datetime import datetime
@@ -23,9 +24,7 @@ def main():
 
         # 2. Obtención de datos de fuentes externas
         players_map_biwenger = biwenger.get_all_players_data_map(config.ALL_PLAYERS_DATA_URL)
-        jp_tips_map = fetch_jp_player_tips(config.JORNADA_PERFECTA_MERCADO_URL)
-        # Se llama a la función sin argumentos, ya que la versión funcional
-        # obtiene la URL directamente del archivo de configuración.
+        jp_tips_map = fetch_jp_player_tips()
         analitica_coeffs_map = fetch_analitica_fantasy_coeffs()
 
         if not analitica_coeffs_map:
@@ -88,17 +87,21 @@ def main():
             order = {"muyRecomendable": 0, "recomendable": 1, "apuesta": 2, "fondoDeArmario": 3, "parche": 4, "noRecomendable": 5}
             all_players_export_list.sort(key=lambda x: (x['Mánager'].startswith('Mercado_'), x['Mánager'], order.get(x['Nota IA'], 99)))
 
+            # --- CORRECCIÓN: Construir la ruta de salida dinámicamente ---
+            # Esto asegura que el CSV se guarde dentro de la carpeta 'teams_analyzer'
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            output_filepath = os.path.join(base_dir, config.FINAL_REPORT_NAME)
+
             fieldnames = ['Mánager', 'Jugador', 'Posición', 'Valor Actual', 'Cláusula', 'Nota IA', 'Coeficiente AF', 'Puntuación Esperada AF']
-            with open(config.OUTPUT_FILENAME, 'w', newline='', encoding='utf-8') as f:
+            with open(output_filepath, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(all_players_export_list)
-            print(f"\n✅ ¡Exportación de {len(all_players_export_list)} jugadores completada en '{config.OUTPUT_FILENAME}'!")
+            print(f"\n✅ ¡Exportación de {len(all_players_export_list)} jugadores completada en '{config.FINAL_REPORT_NAME}'!")
 
             if config.TELEGRAM_BOT_TOKEN and config.TELEGRAM_CHAT_ID:
                 caption = f"📊 ¡Análisis de equipos completado! ({len(all_players_export_list)} jugadores)"
-                send_telegram_notification(config.TELEGRAM_API_URL, config.TELEGRAM_BOT_TOKEN, config.TELEGRAM_CHAT_ID, caption, config.OUTPUT_FILENAME)
-
+                send_telegram_notification(config.TELEGRAM_API_URL, config.TELEGRAM_BOT_TOKEN, config.TELEGRAM_CHAT_ID, caption, output_filepath)
     except Exception as e:
         print(f"❌ Ocurrió un error inesperado: {e}")
         traceback.print_exc()

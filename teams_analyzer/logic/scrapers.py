@@ -1,5 +1,11 @@
+import csv
+import json
+import os
+import re
+import requests
 import time
 import traceback
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -30,8 +36,8 @@ def fetch_jp_player_tips():
 
 def fetch_analitica_fantasy_coeffs():
     """
-    Versión restaurada y funcional del scraper de Analítica Fantasy.
-    Utiliza la lógica que proporcionaste y que funciona correctamente.
+    Scraper de Analítica Fantasy que ahora también guarda un CSV de respaldo
+    con los datos en crudo.
     """
     print("▶️  Descargando coeficientes de Analítica Fantasy (usando Selenium)...")
     chrome_options = Options()
@@ -131,5 +137,21 @@ def fetch_analitica_fantasy_coeffs():
     finally:
         if 'driver' in locals():
             driver.quit()
+
+    if coeffs_map:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_dir = os.path.join(script_dir, '..')
+        output_path = os.path.join(project_dir, config.BACKUP_COEFFS_CSV)
+
+        try:
+            with open(output_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(['nombre_normalizado', 'coeficiente', 'puntuacion_esperada'])
+                for name, data in coeffs_map.items():
+                    writer.writerow([name, data['coeficiente'], data['puntuacion_esperada']])
+            print(f"✅ Datos brutos de scraping guardados en '{output_path}'")
+        except Exception as e:
+            print(f"❌ No se pudo guardar el archivo de respaldo: {e}")
+
     print(f"✅ Base de datos de Analítica Fantasy con {len(coeffs_map)} coeficientes creada.")
     return coeffs_map

@@ -12,7 +12,8 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # --- CONFIGURACIÓN NO CRÍTICA (valores fijos) ---
 LEAGUE_ID = "340703"
-OUTPUT_FILENAME = "squads_export.csv"
+FINAL_REPORT_NAME = "squads_export.csv"
+BACKUP_COEFFS_CSV = "analitica_fantasy_data_backup.csv"
 
 # --- URLs DE LAS APIS ---
 BASE_URL_BIWENGER = "https://biwenger.as.com/api/v2"

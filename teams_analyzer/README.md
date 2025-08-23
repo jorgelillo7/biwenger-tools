@@ -89,7 +89,7 @@ Al finalizar la ejecución, encontrarás dos nuevos archivos CSV en tu carpeta:
 
 - **`squads_export.csv`**: El informe principal con la lista de todos los jugadores, su valor, cláusula y los datos de análisis extraídos.
 
-- **`analitica_fantasy_data.csv`**: Un archivo de respaldo con los datos en crudo obtenidos de "Analítica Fantasy". Es útil para verificar que el scraping ha funcionado correctamente.
+- **`analitica_fantasy_data_backup.csv`**: Un archivo de respaldo con los datos en crudo obtenidos de "Analítica Fantasy". Es útil para verificar que el scraping ha funcionado correctamente.
 
 ## 🔧 Personalización y Mantenimiento
 
