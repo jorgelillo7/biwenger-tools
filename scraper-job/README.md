@@ -46,6 +46,16 @@ La primera vez que ejecutes el script, se abrirá un navegador para que autorice
 python3 -m scraper-job.get_messages
 ```
 
+### ALT. Docker (desde raiz)
+```
+docker build -t biwenger-scraper:latest -f scraper-job/Dockerfile .
+
+```
+
+```
+docker run --rm biwenger-scraper:latest
+```
+
 ## 🚀 Despliegue en Google Cloud
 
 Pasos para desplegar el scraper como un Cloud Run Job automatizado.
@@ -80,6 +90,13 @@ Construye la imagen de Docker, despliega el job y ejecútalo.
 #### Construye la imagen Docker:
 ```bash
 gcloud builds submit --tag gcr.io/biwenger-tools/scraper-job
+
+docker build --platform linux/amd64 \
+  -t gcr.io/biwenger-tools/scraper-job \
+  -f scraper-job/Dockerfile .
+
+docker push gcr.io/biwenger-tools/scraper-job
+
 ```
 
 #### Crea el Job (solo la primera vez):
