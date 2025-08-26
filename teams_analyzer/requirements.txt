@@ -1,0 +1,7 @@
+requests
+beautifulsoup4
+Unidecode
+selenium
+webdriver-manager
+python-dateutil
+pytz
