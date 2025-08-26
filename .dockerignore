@@ -1,0 +1,21 @@
+# Entornos virtuales
+venv/
+**/venv/
+
+# Archivos de Python compilados
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Git y metadatos
+.git/
+.gitignore
+
+# Archivos locales
+.DS_Store
+.env
+
+# Archivos de tests y docs
+tests/
+docs/
