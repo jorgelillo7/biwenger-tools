@@ -1,58 +1,20 @@
-## 🏠 Entorno Local (Scraper)
-### 1. Instalación de Dependencias
-```bash
-# Crea un entorno virtual (solo la primera vez)
-python3 -m venv venv
+# 🖥️ Web App de Biwenger Tools
 
-# Activa el entorno (en macOS/Linux)
-source venv/bin/activate
+Esta es la aplicación web para las herramientas de Biwenger. Proporciona una interfaz para visualizar todos los comunicados y gilipolleces recopilados por el Scraper Job.
 
-# En Windows usa: venv\Scripts\activate
-```
+## 🚀 Funcionalidades Clave
 
-```bash
-pip3 install -r requirements.txt
-```
+* **Visualización de datos**: Muestra de forma interactiva la información de comunicados de tu liga de Biwenger.
+* **Sincronización de datos**: Se conecta a los archivos CSV generados por el scraper para mostrar los datos más recientes.
 
-### 2. Ejecución (desde raiz)
-```bash
-python3 -m web.app
-```
+## ⚙️ Configuración y Uso
 
-### 3. Accedemos a la web
-http://127.0.0.1:8080
+Para ejecutar y configurar esta aplicación web, consulta las instrucciones detalladas en el documento principal de operaciones.
 
+* **Instalación y dependencias**: Revisa la sección **`1.1 Web App`** en `operations.md`.
+* **Ejecución y despliegue**: Los comandos para la ejecución local y el despliegue en Google Cloud se encuentran en `operations.md` **`2.1 Web App`**.
 
-### ALT. Docker (desde raiz)
-```
-docker build -t biwenger-web:latest -f web/Dockerfile .
-```
+## ⚠️ Notas
 
-```
-docker run -p 8080:8080 biwenger-web:latest
-```
-
-## 🚀 Despliegue en Google Cloud
-### 1. Configuración del proyecto
-```bash
-gcloud auth login
-gcloud config set project biwenger-tools
-```
-
-### 2. Construye la imagen Docker (desde raiz)
-```
-gcloud auth configure-docker
-```
-
-```
-docker build --platform linux/amd64 -t gcr.io/biwenger-tools/web -f web/Dockerfile .
-docker push gcr.io/biwenger-tools/web
-```
-
-### 3. Deploy en script que usa .env (dentro de /web)
-```bash
-./deploy.sh
-```
-
-### 4. Accedemos a la web
+* **Acceso en producción**: Una vez desplegada, puedes acceder a la web en la URL que te proporciona el servicio de Google Cloud.
 https://biwenger-summary-pjpqofuevq-no.a.run.app/
