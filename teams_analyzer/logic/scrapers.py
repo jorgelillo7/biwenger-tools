@@ -16,7 +16,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-#from webdriver_manager.chrome import ChromeDriverManager
+
+# Solo importa WebDriverManager si estamos en local
+RUNNING_IN_DOCKER = os.path.exists("/.dockerenv")
+if not RUNNING_IN_DOCKER:
+    from webdriver_manager.chrome import ChromeDriverManager
 
 from .. import config
 from .player_matching import normalize_name
@@ -38,43 +42,37 @@ def fetch_jp_player_tips():
 
 def create_chrome_driver():
     """
-    Inicializa Chromium headless con opciones robustas para Docker ARM64.
+    Inicializa Chromium/Chrome headless con opciones robustas para Docker ARM64 y local.
     """
     driver = None
-    max_retries = 3
-    retry_delay = 5
-    temp_dir = None
+    temp_dir = tempfile.mkdtemp()
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument(f"--user-data-dir={temp_dir}")
+    chrome_options.add_argument("--remote-allow-origins=*")
+    chrome_options.add_argument("--window-size=1920,1080")
 
-    for attempt in range(max_retries):
-        try:
-            temp_dir = tempfile.mkdtemp()
-            chrome_options = Options()
-            chrome_options.add_argument("--headless=new")
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument(f"--user-data-dir={temp_dir}")
-            chrome_options.add_argument("--remote-allow-origins=*")
-            chrome_options.add_argument("--window-size=1920,1080")
+    try:
+        if RUNNING_IN_DOCKER:
             chrome_options.binary_location = "/usr/bin/chromium"
+            driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
+        else:
+            # En local no definimos binary_location
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
-            driver = webdriver.Chrome(
-                service=Service("/usr/bin/chromedriver"),
-                options=chrome_options
-            )
-            driver.get("about:blank")
-            return driver
+        driver.get("about:blank")
+        return driver
 
-        except Exception as e:
-            print(f"❌ Intento {attempt+1} fallido al iniciar Chromium: {e}")
-            if driver:
-                driver.quit()
-            time.sleep(retry_delay)
-        finally:
-            if temp_dir and os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
-
-    raise Exception("No se pudo iniciar Chromium tras varios intentos")
+    except Exception as e:
+        if driver:
+            driver.quit()
+        raise Exception(f"No se pudo iniciar Chrome/Chromium: {e}") from e
+    finally:
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
 
 
 def fetch_analitica_fantasy_coeffs():
