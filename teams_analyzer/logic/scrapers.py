@@ -4,6 +4,8 @@ import os
 import re
 import requests
 import time
+import shutil
+import tempfile
 import traceback
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -14,7 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from webdriver_manager.chrome import ChromeDriverManager
+#from webdriver_manager.chrome import ChromeDriverManager
 
 from .. import config
 from .player_matching import normalize_name
@@ -34,31 +36,60 @@ def fetch_jp_player_tips():
     print(f"✅ Base de datos de Jornada Perfecta con {len(jp_tips_map)} recomendaciones creada.")
     return jp_tips_map
 
+def create_chrome_driver():
+    """
+    Inicializa Chromium headless con opciones robustas para Docker ARM64.
+    """
+    driver = None
+    max_retries = 3
+    retry_delay = 5
+    temp_dir = None
+
+    for attempt in range(max_retries):
+        try:
+            temp_dir = tempfile.mkdtemp()
+            chrome_options = Options()
+            chrome_options.add_argument("--headless=new")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument(f"--user-data-dir={temp_dir}")
+            chrome_options.add_argument("--remote-allow-origins=*")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.binary_location = "/usr/bin/chromium"
+
+            driver = webdriver.Chrome(
+                service=Service("/usr/bin/chromedriver"),
+                options=chrome_options
+            )
+            driver.get("about:blank")
+            return driver
+
+        except Exception as e:
+            print(f"❌ Intento {attempt+1} fallido al iniciar Chromium: {e}")
+            if driver:
+                driver.quit()
+            time.sleep(retry_delay)
+        finally:
+            if temp_dir and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+
+    raise Exception("No se pudo iniciar Chromium tras varios intentos")
+
+
 def fetch_analitica_fantasy_coeffs():
     """
-    Scraper de Analítica Fantasy que ahora también guarda un CSV de respaldo
-    con los datos en crudo.
+    Descarga los coeficientes de Analítica Fantasy, ignorando problemas de dropdown.
     """
-    print("▶️  Descargando coeficientes de Analítica Fantasy (usando Selenium)...")
-    chrome_options = Options()
-
-    # Para ejecutar en segundo plano, quita el '#' de la siguiente línea
-    chrome_options.add_argument("--headless")
-
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:128.0) Gecko/20100101 Firefox/128.0")
-    chrome_options.add_argument("--start-maximized")
-
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-
+    print("▶️ Descargando coeficientes de Analítica Fantasy (usando Selenium)...")
+    driver = None
     coeffs_map = {}
-    try:
+    temp_dir = None
 
+    try:
+        driver = create_chrome_driver()
         driver.get(config.ANALITICA_FANTASY_URL)
-        print("    ...esperando a que la página cargue...")
-        wait = WebDriverWait(driver, 30)
+        wait = WebDriverWait(driver, 60)
 
         try:
             cookie_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'ACEPTO')]")))
@@ -135,23 +166,23 @@ def fetch_analitica_fantasy_coeffs():
     except Exception:
         traceback.print_exc()
     finally:
-        if 'driver' in locals():
+        if driver:
             driver.quit()
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
 
+    # Guardar CSV de respaldo
     if coeffs_map:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        project_dir = os.path.join(script_dir, '..')
-        output_path = os.path.join(project_dir, config.BACKUP_COEFFS_CSV)
-
+        output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', config.BACKUP_COEFFS_CSV)
         try:
             with open(output_path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(['nombre_normalizado', 'coeficiente', 'puntuacion_esperada'])
                 for name, data in coeffs_map.items():
                     writer.writerow([name, data['coeficiente'], data['puntuacion_esperada']])
-            print(f"✅ Datos brutos de scraping guardados en '{output_path}'")
+            print(f"✅ Datos guardados en '{output_path}'")
         except Exception as e:
-            print(f"❌ No se pudo guardar el archivo de respaldo: {e}")
+            print(f"❌ No se pudo guardar el archivo: {e}")
 
     print(f"✅ Base de datos de Analítica Fantasy con {len(coeffs_map)} coeficientes creada.")
     return coeffs_map

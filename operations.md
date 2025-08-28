@@ -52,6 +52,11 @@ Este documento centraliza comandos reproducibles para **desarrollo, pruebas, des
         ```bash
         python3 -m teams_analyzer.teams_analyzer
         ```
+    * **Docker local:**
+        ```bash
+        docker build -t biwenger-teams-analyzer:latest -f teams_analyzer/Dockerfile .
+        docker run --rm --shm-size=2g biwenger-teams-analyzer:latest
+        ```
 
 ---
 
