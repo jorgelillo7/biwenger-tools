@@ -4,7 +4,7 @@ import ssl
 from collections import defaultdict
 from datetime import datetime, timedelta
 from dateutil import parser
-from flask import Flask, render_template, request, session, redirect, url_for, flash, g
+from flask import Flask, render_template, request, session, redirect, url_for, flash, g, jsonify
 
 from . import config
 from core.gcp_services import get_google_service, find_file_on_drive, download_csv_as_dict, get_sheets_data
@@ -205,35 +205,54 @@ def participacion(season):
                            temporada_actual=config.TEMPORADA_ACTUAL,
                            temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
 
-@app.route('/<season>/ligas-especiales')
-def ligas_especiales(season):
-    """Displays special leagues data from a Google Sheet."""
+@app.route('/<season>/lloros-awards')
+def lloros_awards(season):
     error = None
     leagues = []
+    trofeos = []
+
     try:
         if not sheets_service:
             raise Exception("El servicio de Google Sheets no está disponible.")
 
-        sheet_id = config.LIGAS_ESPECIALES_SHEETS.get(g.season)
-        if not sheet_id:
-            raise ValueError(f"No hay una hoja de Ligas Especiales configurada para la temporada {g.season}.")
-
-        leagues = get_sheets_data(sheets_service, sheet_id)
-    except ssl.SSLError as e:
-        error = f"Error de SSL al conectar con Google Sheets. Puede ser un problema con tu red o certificados locales. ({e})"
-        print(error)
     except Exception as e:
-        error = f"Ocurrió un error al cargar las ligas especiales: {e}"
+        error = f"Ocurrió un error al cargar los datos: {e}"
         print(error)
 
-    return render_template('ligas_especiales.html',
-                           leagues=leagues,
+    return render_template('lloros_awards.html',
+                           leagues=None,
+                           trofeos=None,
                            error=error,
-                           active_page='ligas-especiales',
-                           season=g.season,
+                           season=season,
+                           active_page='lloros_awards',
                            temporada_actual=config.TEMPORADA_ACTUAL,
                            temporadas_disponibles=config.TEMPORADAS_DISPONIBLES)
 
+@app.route('/api/lloros-awards/ligas')
+def api_lloros_ligas():
+    error = None
+    leagues = []
+    try:
+        sheet_id = config.LIGAS_ESPECIALES_SHEETS.get(g.season)
+        if sheet_id:
+            leagues = get_sheets_data(sheets_service, sheet_id)
+    except Exception as e:
+        error = f"Ocurrió un error al cargar las ligas especiales: {e}"
+        print(error)
+    return jsonify(leagues)
+
+@app.route('/api/lloros-awards/trofeos')
+def api_lloros_trofeos():
+    error = None
+    trofeos = []
+    try:
+        sheet_id = config.TROFEOS_SHEETS.get(g.season)
+        if sheet_id:
+            trofeos = get_sheets_data(sheets_service, sheet_id)
+    except Exception as e:
+        error = f"Ocurrió un error al cargar los trofeos: {e}"
+        print(error)
+    return jsonify(trofeos)
 
 # --- RUTAS FIJAS (NO DEPENDEN DE LA TEMPORADA) ---
 

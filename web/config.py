@@ -25,6 +25,11 @@ LIGAS_ESPECIALES_SHEETS = {
     "24-25": os.getenv('LIGAS_ESPECIALES_SHEET_ID_24_25')
 }
 
+# --- NUEVO: Diccionario de Trofeos ---
+TROFEOS_SHEETS = {
+    "25-26": os.getenv('TROFEOS_SHEET_ID_25_26'),
+}
+
 
 # --- CONFIGURACIÓN (leída desde el entorno) ---
 COMUNICADOS_CSV_URL = os.getenv('COMUNICADOS_CSV_URL')

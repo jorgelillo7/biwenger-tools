@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Lloros Awards{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Botones -->
+    <div class="flex justify-center space-x-4 mb-8">
+        <button id="btn-ligas" class="filter-btn px-6 py-2 rounded-full font-semibold transition">Ligas Especiales</button>
+        <button id="btn-trofeos" class="filter-btn px-6 py-2 rounded-full font-semibold transition">Trofeos</button>
+    </div>
+
+    <!-- Mensaje inicial -->
+    <div id="info-message" class="card p-6 text-center text-gray-700">
+        Seleccione una sección antes de continuar
+    </div>
+
+    <!-- Contenedores para los datos -->
+    <div id="ligas-container" class="content-section hidden"></div>
+    <div id="trofeos-container" class="content-section hidden"></div>
+</div>
+
+<style>
+.filter-btn {
+    background-color: #e2e8f0;
+    color: #4a5568;
+}
+.filter-btn.active {
+    background-color: #38a169;
+    color: white;
+}
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #38a169;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    animation: spin 1s linear infinite;
+    margin: 2rem auto;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+const season = "{{ season }}";
+
+const btnLigas = document.getElementById('btn-ligas');
+const btnTrofeos = document.getElementById('btn-trofeos');
+const infoMessage = document.getElementById('info-message');
+const ligasContainer = document.getElementById('ligas-container');
+const trofeosContainer = document.getElementById('trofeos-container');
+
+btnLigas.addEventListener('click', async () => {
+    btnLigas.classList.add('active');
+    btnTrofeos.classList.remove('active');
+    infoMessage.classList.add('hidden');
+    ligasContainer.classList.remove('hidden');
+    trofeosContainer.classList.add('hidden');
+
+    if (!ligasContainer.innerHTML) {
+        ligasContainer.innerHTML = '<div class="spinner"></div>';
+        try {
+            const res = await fetch(`/api/lloros-awards/ligas?season=${season}`);
+            const data = await res.json();
+            ligasContainer.innerHTML = renderTable(data);
+        } catch (err) {
+            ligasContainer.innerHTML = `<div class="card p-6 text-center text-red-500">Error al cargar los datos.</div>`;
+        }
+    }
+});
+
+btnTrofeos.addEventListener('click', async () => {
+    btnTrofeos.classList.add('active');
+    btnLigas.classList.remove('active');
+    infoMessage.classList.add('hidden');
+    trofeosContainer.classList.remove('hidden');
+    ligasContainer.classList.add('hidden');
+
+    if (!trofeosContainer.innerHTML) {
+        trofeosContainer.innerHTML = '<div class="spinner"></div>';
+        try {
+            const res = await fetch(`/api/lloros-awards/trofeos?season=${season}`);
+            const data = await res.json();
+            trofeosContainer.innerHTML = renderTable(data);
+        } catch (err) {
+            trofeosContainer.innerHTML = `<div class="card p-6 text-center text-red-500">Error al cargar los datos.</div>`;
+        }
+    }
+});
+
+function renderTable(data) {
+    if (!data || data.length === 0) return '<p class="text-center p-6">No hay datos disponibles.</p>';
+    let html = '';
+    data.forEach(league => {
+        html += `<div class="card p-6 rounded-xl shadow-lg mb-6">`;
+        html += `<div class="mb-6 border-b border-gray-300 pb-4">`;
+        html += `<h2 class="font-header text-3xl font-bold text-gray-900">${league.nombre}</h2>`;
+        html += `<p class="mt-2 text-gray-600 whitespace-pre-wrap">${league.descripcion}</p>`;
+        html += `<p class="mt-2 text-sm"><strong class="font-medium text-green-700">Premio:</strong> ${league.premio}</p>`;
+        html += `</div>`;
+
+        html += `<div class="overflow-x-auto"><table class="min-w-full text-center"><thead><tr>`;
+        league.headers.forEach(header => {
+            const cls = header.includes('Total') ? 'text-green-700' : 'text-gray-600';
+            html += `<th class="p-3 text-sm font-bold uppercase tracking-wider ${cls}">${header}</th>`;
+        });
+        html += `</tr></thead><tbody class="divide-y divide-gray-200">`;
+        league.rows.forEach(row => {
+            html += `<tr class="hover:bg-gray-50 transition-colors">`;
+            row.forEach((cell, i) => {
+                let cls = '';
+                if (i === 0) cls += 'text-left font-medium text-gray-800';
+                if (league.headers[i].includes('Total')) cls += ' font-bold text-green-700';
+                html += `<td class="p-3 whitespace-nowrap ${cls}">${cell}</td>`;
+            });
+            html += `</tr>`;
+        });
+        html += `</tbody></table></div></div>`;
+    });
+    return html;
+}
+</script>
+{% endblock %}
