@@ -2,8 +2,7 @@
 .env
 
 # Archivos de credenciales de Google OAuth 2.0 - No subir nunca
-token.json
-client_secrets.json
+biwenger-tools-sa.json
 
 # Entorno virtual de Python
 venv/

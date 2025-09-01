@@ -19,3 +19,6 @@ __pycache__/
 # Archivos de tests y docs
 tests/
 docs/
+
+biwenger-tools-sa.json
+.env

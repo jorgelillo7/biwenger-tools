@@ -27,6 +27,5 @@ BOARD_MESSAGES_URL = f"{BASE_URL}/league/{LEAGUE_ID}/board?type=text&limit=200"
 # Rutas donde Cloud Run montará los secretos como archivos
 BIWENGER_EMAIL_PATH = "/biwenger_email/biwenger-email"
 BIWENGER_PASSWORD_PATH = "/biwenger_password/biwenger-password"
-CLIENT_SECRETS_PATH = "/gdrive_client/client_secrets.json"
 GDRIVE_FOLDER_ID_PATH = "/gdrive_folder_id/gdrive-folder-id"
-TOKEN_PATH = "/gdrive_token/token.json"
+SERVICE_ACCOUNT_PATH = "/gdrive_sa/biwenger-tools-sa.json"
