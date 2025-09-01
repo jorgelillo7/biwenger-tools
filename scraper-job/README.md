@@ -16,28 +16,36 @@ Para ejecutar y configurar este proyecto, consulta las instrucciones detalladas 
 
 * **Instalación y dependencias**: Revisa la sección **`1.2 Scraper Job`** en `operations.md`.
 * **Configuración de Google API**: Sigue los pasos de configuración de credenciales de Google API.
-* **Ejecución y despliegue**: Los comandos para la ejecución local y el despliegue en Google Cloud se encuentran en `operations.md` **`2.2 Scraper Job`** .
+* **Ejecución y despliegue**: Los comandos para la ejecución local y el despliegue en Google Cloud se encuentran en `operations.md` **`2.2 Scraper Job`**.
 
 ---
 
-### **Configuración de Google API (Solo la primera vez)**
+### **Configuración de Google API (Solo la primera vez, si usas OAuth)**
 
-Sigue estos pasos para permitir que el script acceda a tu Google Drive.
+Si quisieras que el script cree los CSV directamente en tu **Drive personal** de forma automática, el flujo sería este:
 
 * **Configura la Pantalla de Consentimiento:**
-    * Ve a la **Consola de Google Cloud** > **APIs y servicios** > **Pantalla de consentimiento de OAuth**.
-    * Selecciona **Externo**, rellena los datos de tu aplicación y añade tu email como usuario de prueba.
+
+  * Ve a la **Consola de Google Cloud** > **APIs y servicios** > **Pantalla de consentimiento de OAuth**.
+  * Selecciona **Externo**, rellena los datos de tu aplicación y añade tu email como usuario de prueba.
 
 * **Crea las Credenciales:**
-    * En **APIs y servicios** > **Credenciales**, haz clic en **+ CREAR CREDENCIALES** > **ID de cliente de OAuth**.
-    * Selecciona **Aplicación de escritorio**.
-    * Descarga el archivo JSON y renómbralo a `client_secrets.json` en la carpeta del scraper.
+
+  * En **APIs y servicios** > **Credenciales**, haz clic en **+ CREAR CREDENCIALES** > **ID de cliente de OAuth**.
+  * Selecciona **Aplicación de escritorio**.
+  * Descarga el archivo JSON y renómbralo a `client_secrets.json` en la carpeta del scraper.
 
 * **Configura la Carpeta en Drive:**
-    * Crea una carpeta en tu Google Drive para los CSV.
-    * Copia el ID de la carpeta desde la URL y pégalo en el archivo `.env` del scraper.
+
+  * Crea una carpeta en tu Google Drive para los CSV.
+  * Copia el ID de la carpeta desde la URL y pégalo en el archivo `.env` del scraper.
+
+> ⚠️ Nota: Este flujo permite que el script escriba en tu Drive personal, pero **el token de OAuth caduca y refrescarlo es engorroso**. Por eso, hemos decidido usar una **Service Account**, que no caduca.
+> ⚠️ Limitación: Como tu cuenta no es Google Workspace, la Service Account **no puede crear archivos directamente en tu Drive personal**. Para que funcione, **debes crear manualmente los CSV vacíos en la carpeta de Drive antes de ejecutar el scraper**.
+
+---
 
 ## ⚠️ Notas Importantes
 
-* **Primera ejecución local**: Requiere autorización manual en el navegador para acceder a Google Drive.
-* **Seguridad**: Nunca subas archivos de credenciales (`client_secrets.json`, `token.json`) al repositorio.
+* **Primera ejecución local**: Requiere autorización manual en el navegador para acceder a Google Drive (solo si usas OAuth).
+* **Seguridad**: Nunca subas el archivo `biwenger-tools-sa.json` al repositorio.

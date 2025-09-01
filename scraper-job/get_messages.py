@@ -1,13 +1,14 @@
-
 import csv
 import hashlib
 import io
 import os
-from datetime import datetime
+import json
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 
 from . import config
-from .logic.processing import categorize_title, process_participation, sort_messages
+from .logic.processing import categorize_title, process_participation, sort_messages, get_all_board_messages
 from core.gcp_services import get_google_service, find_file_on_drive, download_csv_as_dict, upload_csv_to_drive
 from core.biwenger_client import BiwengerClient
 from core.utils import read_secret_from_file
@@ -49,13 +50,16 @@ def main():
         else:
             print(f"ℹ️  No se encontró '{comunicados_filename}'. Se creará uno nuevo.")
 
-        # --- 3. Obtener nuevos datos de Biwenger ---
+        board_messages = get_all_board_messages(
+            biwenger,
+            f"{config.BASE_URL}/league/{config.LEAGUE_ID}/board?type=text"
+        )
+
+        print(f"📊 Total de mensajes descargados: {len(board_messages)}")
         user_map = biwenger.get_league_users(config.LEAGUE_USERS_URL)
-        board_data = biwenger.get_board_messages(config.BOARD_MESSAGES_URL)
 
         # --- 4. Procesar y fusionar datos ---
         new_messages_count = 0
-        board_messages = board_data.get('data', [])
         for item in board_messages:
             content_html = item.get('content', '')
             soup = BeautifulSoup(content_html, 'html.parser')
@@ -68,9 +72,14 @@ def main():
                 author_id = item.get('author', {}).get('id')
                 author_name = user_map.get(author_id, 'Autor Desconocido')
 
+                # ✅ Conversión robusta a zona horaria Madrid
+                fecha_utc = datetime.fromtimestamp(item['date'], tz=timezone.utc)
+                fecha_madrid = fecha_utc.astimezone(ZoneInfo("Europe/Madrid"))
+                fecha_str = fecha_madrid.strftime('%d-%m-%Y %H:%M:%S')
+
                 all_messages.append({
                     'id_hash': id_hash,
-                    'fecha': datetime.fromtimestamp(item['date']).strftime('%d-%m-%Y %H:%M:%S') if 'date' in item else "N/A",
+                    'fecha': fecha_str,
                     'autor': author_name,
                     'titulo': item.get('title', 'Sin título'),
                     'contenido': content_html,

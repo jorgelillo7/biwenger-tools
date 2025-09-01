@@ -57,3 +57,30 @@ def sort_messages(messages):
 
     messages.sort(key=get_date, reverse=True)
     return messages
+
+def get_all_board_messages(biwenger, base_url, limit=200):
+    """
+    Descarga todos los mensajes del board de Biwenger usando paginación automática.
+    """
+    all_messages = []
+    offset = 0
+
+    while True:
+        url = f"{base_url}&limit={limit}&offset={offset}"
+        data = biwenger.get_board_messages(url)
+        messages = data.get("data", [])
+
+        print(f"📥 Página offset={offset} → {len(messages)} mensajes")
+
+        if not messages:
+            break
+
+        all_messages.extend(messages)
+        offset += limit
+
+        # Si devuelve menos mensajes que el límite, ya hemos llegado al final
+        if len(messages) < limit:
+            break
+
+    print(f"✅ Total mensajes descargados: {len(all_messages)}")
+    return all_messages
