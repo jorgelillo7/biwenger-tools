@@ -64,31 +64,31 @@ Este documento centraliza comandos reproducibles para **desarrollo, pruebas, des
 ```bash
 gcloud auth login
 gcloud config set project biwenger-tools
-gcloud auth configure-docker
+gcloud auth configure-docker europe-southwest1-docker.pkg.dev
 ```
 
 * **2.1 Web App**
     * **Construir y subir imagen Docker desde la raíz:**
         ```bash
-        docker build --platform linux/amd64 -t gcr.io/biwenger-tools/web -f web/Dockerfile .
-        docker push gcr.io/biwenger-tools/web
+        docker build --platform linux/amd64 -t europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/web -f web/Dockerfile .
+        docker push europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/web
         ```
     * **Deploy usando script que lee .env:**
         ```bash
-        cd /web
+        cd web
         ./deploy.sh
         ```
 
 * **2.2 Scraper Job**
     * **Construir y subir imagen Docker:**
         ```bash
-        docker build --platform linux/amd64 -t gcr.io/biwenger-tools/scraper-job -f scraper-job/Dockerfile .
-        docker push gcr.io/biwenger-tools/scraper-job
+        docker build --platform linux/amd64 -t europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job -f scraper-job/Dockerfile .
+        docker push europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job
         ```
     * **Crear Job (solo la primera vez):**
         ```bash
         gcloud run jobs create biwenger-scraper-data \
-            --image gcr.io/biwenger-tools/scraper-job \
+            --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job \
             --region europe-southwest1 \
             --set-secrets="/gdrive_client/client_secrets.json=client_secrets_json:latest" \
             --set-secrets="/gdrive_token/token.json=token_json:latest" \
@@ -99,16 +99,15 @@ gcloud auth configure-docker
     * **Actualizar Job (nueva versión o secretos):**
         ```bash
         gcloud run jobs update biwenger-scraper-data \
-            --image gcr.io/biwenger-tools/scraper-job \
+            --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job \
             --region europe-southwest1
         ```
 
         ```bash
         gcloud run jobs update biwenger-scraper-data \
-        --image gcr.io/biwenger-tools/scraper-job \
+        --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job \
         --region europe-southwest1 \
-        --set-secrets="/gdrive_client/client_secrets.json=client_secrets_json:latest" \
-        --set-secrets="/gdrive_token/token.json=token_json:latest" \
+        --set-secrets="/gdrive_sa/biwenger-tools-sa.json=biwenger_tools_sa:latest" \
         --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \
         --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest" \
         --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
@@ -131,8 +130,7 @@ gcloud auth configure-docker
 #### ejemplos
 ```bash
 # Asegúrate de que los archivos están en la carpeta dónde ejecutas el comando
-gcloud secrets create client_secrets_json --data-file="client_secrets.json"
-gcloud secrets create token_json --data-file="token.json"
+gcloud secrets create biwenger_tools_sa --data-file="biwenger-tools-sa.json"
 ```
 
 #### Credenciales de Biwenger y Drive (como texto):
@@ -151,35 +149,42 @@ gcloud secrets versions add token_json --data-file="token.json"
 
 ### 4️⃣ Limpieza de imágenes y control de costos
 
-* **Listar imágenes:**
-    ```bash
-    gcloud container images list --repository=gcr.io/biwenger-tools
+-----
+
+#### Artifact Registry
+
+  * **Crear repositorio Docker (1º vez):**
     ```
-
+    gcloud artifacts repositories create biwenger-docker \
+        --repository-format=docker \
+        --location=europe-southwest1 \
+        --description="Docker images for Biwenger Tools"
     ```
-    gcloud container images list-tags gcr.io/biwenger-tools/web
-    gcloud container images list-tags gcr.io/biwenger-tools/scraper-job
+  * **Listar repositorios:**
     ```
-
-
-* **Borrar imágenes antiguas:**
-    ```bash
-    gcloud container images list-tags gcr.io/biwenger-tools/web \
-    --format="get(digest)" \
-    --filter="tags!=latest" | xargs -I {} gcloud container images delete -q gcr.io/biwenger-tools/web@{}
+    gcloud artifacts repositories list --project=biwenger-tools
     ```
-
-    ```bash
-    gcloud container images list-tags gcr.io/biwenger-tools/scraper-job \
-    --format="get(digest)" \
-    --filter="tags!=latest" | xargs -I {} gcloud container images delete -q gcr.io/biwenger-tools/scraper-job@{}
+  * **Listar imágenes:**
     ```
+    gcloud artifacts docker images list europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker
+    ```
+  * **Limpiar imágenes antiguas (script):**
+    ```
+    ./clean-images-artifact.sh
+    ```
+    Este script elimina todas las versiones viejas de cada imagen, dejando solo la última con la etiqueta `latest`.
+  * **Revisar costes (script):**
+    ```
+    ./check-gcp-costs.sh
+    ```
+    Este script muestra el almacenamiento usado y el uso de **Artifact Registry** y **Cloud Run**, comparándolo con el **Free Tier**.
 
----
+-----
 
-### 5️⃣ Notas Importantes
+### 5️⃣ Notas importantes
 
-* La primera ejecución local del scraper requiere autorización manual en Google.
-* Nunca subir archivos `client_secrets.json` o `token.json`.
-* Revisar logs en Cloud Run / GCP Console ante fallos.
-* Mantener `.env` en la raíz de cada miniproyecto para ejecución desde la raíz.
+-----
+
+  * Nunca subir archivos `biwenger-tools-sa.json`.
+  * Revisar logs en **Cloud Run** / **GCP Console** si hay fallos.
+  * Mantener `.env` en la raíz de cada miniproyecto para su ejecución.
