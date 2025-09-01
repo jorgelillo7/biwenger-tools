@@ -1,7 +1,7 @@
 import csv
 import io
 import os
-from google.oauth2.credentials import Credentials
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -9,43 +9,16 @@ from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 
 # --- AUTENTICACIÓN Y SERVICIOS ---
 
-def get_google_service(service_name, version, token_path, client_secrets_path, scopes):
+def get_google_service(api_name, api_version, service_account_file, scopes):
     """
-    Función genérica para autenticar y crear un servicio de Google.
-    Maneja la creación y actualización automática del token.
+    Devuelve un cliente autenticado usando Service Account.
     """
-    creds = None
-    token_file = token_path if os.path.exists(token_path) else 'token.json'
-
-    if os.path.exists(token_file):
-        creds = Credentials.from_authorized_user_file(token_file, scopes)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            print("ℹ️  El token de acceso ha caducado. Refrescando automáticamente...")
-            try:
-                creds.refresh(Request())
-            except Exception as e:
-                print(f"❌ Error al refrescar el token: {e}. Se requiere nueva autenticación.")
-                if os.path.exists(token_file): os.remove(token_file)
-                creds = None
-
-        if not creds or not creds.valid:
-            print("▶️  Iniciando flujo de autenticación (puede necesitar intervención manual).")
-            if not os.path.exists(client_secrets_path):
-                raise FileNotFoundError(f"El archivo de secretos de cliente '{client_secrets_path}' es necesario.")
-            flow = InstalledAppFlow.from_client_secrets_file(client_secrets_path, scopes)
-            creds = flow.run_local_server(port=0)
-
-        try:
-            if not os.path.exists(token_path): # No sobreescribir si es un secreto montado
-                with open(token_file, 'w') as token:
-                    token.write(creds.to_json())
-                print(f"✅ Nuevo token guardado en '{token_file}'.")
-        except Exception as e:
-            print(f"⚠️  No se pudo reescribir el archivo del token (normal en Cloud Run): {e}")
-
-    return build(service_name, version, credentials=creds)
+    credentials = service_account.Credentials.from_service_account_file(
+        service_account_file,
+        scopes=scopes
+    )
+    service = build(api_name, api_version, credentials=credentials)
+    return service
 
 # --- OPERACIONES CON GOOGLE DRIVE ---
 

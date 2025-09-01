@@ -20,16 +20,13 @@ sheets_service = None
 try:
     # Construct paths relative to the current file
     base_dir = os.path.dirname(__file__)
-    local_secrets_path = os.path.join(base_dir, 'client_secrets.json')
-    local_token_path = os.path.join(base_dir, 'token.json')
+    service_account_path = os.path.join(base_dir, 'biwenger-tools-sa.json')
+    if os.path.exists(config.SERVICE_ACCOUNT_PATH):
+        service_account_path = config.SERVICE_ACCOUNT_PATH
 
-    # Determine which file paths to use
-    client_secrets_file = config.CLIENT_SECRETS_PATH if os.path.exists(config.CLIENT_SECRETS_PATH) else local_secrets_path
-    token_file = config.TOKEN_PATH if os.path.exists(config.TOKEN_PATH) else local_token_path
+    drive_service = get_google_service('drive', 'v3', service_account_path, config.SCOPES)
+    sheets_service = get_google_service('sheets', 'v4', service_account_path, config.SCOPES)
 
-    # Initialize Google services
-    drive_service = get_google_service('drive', 'v3', token_file, client_secrets_file, config.SCOPES)
-    sheets_service = get_google_service('sheets', 'v4', token_file, client_secrets_file, config.SCOPES)
 except Exception as e:
     # Log critical error if services fail to initialize
     print(f"CRITICAL ERROR: No se pudieron inicializar los servicios de Google: {e}")

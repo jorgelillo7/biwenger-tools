@@ -5,8 +5,13 @@ from dotenv import load_dotenv
 # Carga las variables del archivo .env si existe (para desarrollo local)
 load_dotenv()
 
-CLIENT_SECRETS_PATH = "/gdrive_client/client_secrets.json"
-TOKEN_PATH = "/gdrive_token/token.json"
+SERVICE_ACCOUNT_PATH = "/gdrive_sa/biwenger-tools-sa.json"
+
+SCOPES = [
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/spreadsheets.readonly"
+]
+
 
 # --- CONFIGURACIÓN DE TEMPORADA ---
 TEMPORADA_ACTUAL = "25-26"
@@ -37,7 +42,6 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
 
 # --- CONFIGURACIÓN NO CRÍTICA (valores fijos) ---
 MESSAGES_PER_PAGE = 7
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly', 'https://www.googleapis.com/auth/spreadsheets.readonly']
 
 # Nombres base de los archivos. La temporada se añadirá dinámicamente.
 COMUNICADOS_FILENAME_BASE = "comunicados"
