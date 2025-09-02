@@ -2,6 +2,129 @@
 
 Este documento centraliza comandos reproducibles para **desarrollo, pruebas, despliegue y mantenimiento**.
 
+
+---
+### 🚀 Configuración de Linter y Formateo Automático con Black y Flake8
+
+Este documento detalla cómo configurar tu entorno de desarrollo en VS Code para aplicar linter y formateo automático utilizando **Flake8** y **Black Formatter**. Esto asegura que tu código Python mantenga un estilo consistente y libre de errores.
+
+---
+
+#### 🛠️ Requisitos Previos
+
+Antes de comenzar, asegúrate de tener:
+
+* **Python 3.x** instalado en tu sistema.
+* **Visual Studio Code** instalado.
+
+---
+
+#### 📦 Configuración del Entorno Virtual y Herramientas
+
+Sigue estos pasos para preparar tu entorno de desarrollo:
+
+##### 1. Crear y Activar el Entorno Virtual
+
+En la raíz de tu proyecto, ejecuta los siguientes comandos en tu terminal:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate  # En Windows usa: .venv\Scripts\activate
+````
+
+### 2\. Instalar Black y Flake8
+
+Con el entorno virtual activado, instala las herramientas de linting y formateo:
+
+```bash
+pip install flake8 black
+pip install flake8-bugbear
+```
+
+-----
+
+#### ⚙️ Configuración en Visual Studio Code
+
+Para que VS Code utilice estas herramientas, necesitarás instalar algunas extensiones y ajustar la configuración del espacio de trabajo.
+
+##### 1\. Instalar las Extensiones Necesarias
+
+Abre VS Code y ve a la vista de Extensiones (`Ctrl+Shift+X` o `Cmd+Shift+X` en macOS). Instala las siguientes extensiones:
+
+  * **Python**: La extensión oficial de Microsoft (ID: `ms-python.python`). Es fundamental para el soporte de Python en VS Code.
+  * **Black Formatter**: La extensión oficial de Microsoft para Black (ID: `ms-python.black-formatter`).
+
+#### 2\. Seleccionar el Intérprete de Python
+
+Es crucial que VS Code sepa qué intérprete de Python usar para tu proyecto.
+
+1.  Abre la **Paleta de Comandos** (`Ctrl+Shift+P` o `Cmd+Shift+P`).
+2.  Escribe `Python: Select Interpreter` y presiona `Enter`.
+3.  Selecciona el intérprete de tu proyecto, que debería aparecer como: `./venv/bin/python`
+
+##### 3\. Configurar Linting y Formateo Automático
+
+Ahora, configura tu espacio de trabajo para usar Black y Flake8.
+
+1.  Abre la **Paleta de Comandos** (`Ctrl+Shift+P` o `Cmd+Shift+P`).
+2.  Escribe `Preferences: Open Workspace Settings (JSON)` y selecciona esta opción. Esto abrirá el archivo `settings.json` dentro de la carpeta `.vscode` de tu proyecto.
+3.  Copia y pega la siguiente configuración dentro de las llaves `{}` de tu archivo `settings.json`. Si ya tienes configuraciones, simplemente añade estas líneas, asegurándote de no duplicar llaves.
+
+```json
+{
+    // Activa el linter de Python
+    "python.linting.enabled": true,
+    // Establece flake8 como tu linter
+    "python.linting.flake8Enabled": true,
+
+    // --- Configuración para Black Formatter ---
+    // Establece Black como el formateador por defecto para Python
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    // Formatea el código automáticamente al guardar
+    "editor.formatOnSave": true,
+
+    // (Opcional) Permite que las acciones de código (como los arreglos del linter) se apliquen al guardar
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.organizeImports": "explicit" // Opcional: para ordenar automáticamente los imports con isort
+    }
+}
+```
+
+##### 4\. Configuración de Flake8 (Opcional)
+
+Puedes personalizar las reglas de Flake8 creando un archivo llamado `.flake8` en la raíz de tu proyecto. Un ejemplo común para compatibilidad con Black es:
+
+```ini
+# .flake8
+[flake8]
+max-line-length = 88
+ignore = E203, W503
+exclude = .git,
+          __pycache__,
+          .venv,
+          venv,
+          *.md
+```
+
+  * `max-line-length = 88`: Alinea la longitud máxima de línea con la de Black.
+  * `ignore = E203, W503`: Ignora reglas que pueden entrar en conflicto con Black.
+  * `exclude`: Lista de directorios y archivos a ignorar por Flake8.
+
+-----
+
+#### ✅ Verificación
+
+Una vez que hayas completado estos pasos:
+
+1.  **Reinicia VS Code**.
+2.  Abre un archivo Python (`.py`) en tu proyecto.
+3.  Escribe código que contenga un error de sintaxis o que no siga las reglas de estilo (por ejemplo, una línea muy larga).
+4.  Deberías ver advertencias o errores subrayados por Flake8.
+5.  Al guardar el archivo (`Ctrl+S` o `Cmd+S`), Black debería formatear automáticamente el código.
+
+---
+
 ---
 
 ### 1️⃣ Entorno Local
@@ -9,11 +132,12 @@ Este documento centraliza comandos reproducibles para **desarrollo, pruebas, des
 * **1.1 Web App**
     * **Crear entorno virtual e instalar dependencias:**
         ```bash
+        cd web
         python3 -m venv venv
         source venv/bin/activate  # Windows: venv\Scripts\activate
-        pip install -r web/requirements.txt
+        pip install -r requirements.txt
         ```
-    * **Ejecutar localmente:**
+    * **Ejecutar localmente desde la raíz:**
         ```bash
         python3 -m web.app
         ```
@@ -26,15 +150,16 @@ Este documento centraliza comandos reproducibles para **desarrollo, pruebas, des
 * **1.2 Scraper Job**
     * **Crear entorno virtual e instalar dependencias:**
         ```bash
+        cd scraper-job
         python3 -m venv venv
         source venv/bin/activate
-        pip install -r scraper-job/requirements.txt
+        pip install -r requirements.txt
         ```
     * **Ejecutar local desde la raíz:**
         ```bash
         python3 -m scraper-job.get_messages
         ```
-    * **Docker local:**
+    * **Docker local desde la raíz:**
         ```bash
         docker build -t biwenger-scraper:latest -f scraper-job/Dockerfile .
         docker run --rm biwenger-scraper:latest
@@ -43,9 +168,10 @@ Este documento centraliza comandos reproducibles para **desarrollo, pruebas, des
 * **1.3 Teams Analyzer**
     * **Crear entorno virtual e instalar dependencias:**
         ```bash
+        cd teams_analyzer
         python3 -m venv venv
         source venv/bin/activate
-        pip install -r teams_analyzer/requirements.txt
+        pip install -r requirements.txt
         ```
     * **Configurar .env con credenciales de Biwenger y Telegram.**
     * **Ejecutar local desde la raíz:**

@@ -15,3 +15,5 @@ Thumbs.db
 
 #csv exportación
 *.csv
+
+.vscode/*
