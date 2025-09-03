@@ -4,26 +4,25 @@ from unidecode import unidecode
 # biwenger -> Analítica Fantasy
 # quitar acentos, pasar a minúsculas
 PLAYER_NAME_MAPPINGS = {
- # Nombres completamente diferentes
-    'odysseas': 'vlachodimos',
-    'alhassane': 'rahim',
-
+    # Nombres completamente diferentes
+    "odysseas": "vlachodimos",
+    "alhassane": "rahim",
     # Inversiones o adiciones
-    'sancet': 'oihan sancet',
-    'javi hernandez': 'javier hernandez',
-
+    "sancet": "oihan sancet",
+    "javi hernandez": "javier hernandez",
     # Apodos o variaciones que no son simples acrónimos
-    'javier rueda': 'javi rueda',
-    'brugue': 'brugui',
-
+    "javier rueda": "javi rueda",
+    "brugue": "brugui",
     # Casos ambiguos que es mejor forzar
-    'ricardo rodriguez': 'r. rodriguez', # Podría confundirse con otro Rodríguez
-    'matias moreno': 'm. moreno'
+    "ricardo rodriguez": "r. rodriguez",  # Podría confundirse con otro Rodríguez
+    "matias moreno": "m. moreno",
 }
+
 
 def normalize_name(name):
     """Función centralizada para limpiar y normalizar nombres."""
     return unidecode(name.lower().strip())
+
 
 def find_player_match(biwenger_name, analitica_map):
     """
@@ -67,8 +66,11 @@ def find_player_match(biwenger_name, analitica_map):
             return data
 
     # Si nada funciona, se devuelve el valor por defecto
-    return {'coeficiente': 'N/A', 'puntuacion_esperada': 'N/A'}
+    return {"coeficiente": "N/A", "puntuacion_esperada": "N/A"}
+
 
 def map_position(pos_id):
     """Mapea el ID de posición de Biwenger a un string legible."""
-    return {1: "Portero", 2: "Defensa", 3: "Centrocampista", 4: "Delantero"}.get(pos_id, "N/A")
+    return {1: "Portero", 2: "Defensa", 3: "Centrocampista", 4: "Delantero"}.get(
+        pos_id, "N/A"
+    )

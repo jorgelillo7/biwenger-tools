@@ -15,7 +15,7 @@ GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID")
 
 # --- CONFIGURACIÓN NO CRÍTICA (valores fijos) ---
 LEAGUE_ID = "340703"
-SCOPES = ['https://www.googleapis.com/auth/drive']
+SCOPES = ["https://www.googleapis.com/auth/drive"]
 
 # --- URLs DE LA API DE BIWENGER ---
 BASE_URL = "https://biwenger.as.com/api/v2"

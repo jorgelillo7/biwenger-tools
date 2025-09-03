@@ -22,7 +22,9 @@ LOGIN_URL = f"{BASE_URL_BIWENGER}/auth/login"
 ACCOUNT_URL = f"{BASE_URL_BIWENGER}/account"
 LEAGUE_DATA_URL = f"{BASE_URL_BIWENGER}/league/{LEAGUE_ID}?fields=standings"
 USER_SQUAD_URL = f"{BASE_URL_BIWENGER}/user/{{manager_id}}?fields=players(id,owner)"
-ALL_PLAYERS_DATA_URL = f"{CF_BASE_URL_BIWENGER}/competitions/la-liga/data?lang=es&score=100"
+ALL_PLAYERS_DATA_URL = (
+    f"{CF_BASE_URL_BIWENGER}/competitions/la-liga/data?lang=es&score=100"
+)
 MARKET_URL = f"{BASE_URL_BIWENGER}/market"
 
 JORNADA_PERFECTA_MERCADO_URL = "https://www.jornadaperfecta.com/mercado/"

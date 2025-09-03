@@ -2,8 +2,11 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY scraper-job/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY scraper-job/requirements.txt ./scraper-job/
+COPY core/requirements.txt ./core/
+
+RUN pip install --no-cache-dir -r scraper-job/requirements.txt
+RUN pip install --no-cache-dir -r core/requirements.txt
 
 COPY core/ ./core/
 COPY scraper-job/ ./scraper-job/

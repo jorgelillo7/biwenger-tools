@@ -1,0 +1,12 @@
+# core/requirements.txt
+requests
+google-api-python-client
+google-auth-oauthlib
+google-auth
+pytz
+python-dateutil
+
+# Herramientas de desarrollo
+black
+flake8
+#pytest
