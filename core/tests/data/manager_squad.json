@@ -1,0 +1,16 @@
+{
+  "data": {
+    "players": [
+      {
+        "id": 1001,
+        "name": "Yamal",
+        "position": "DEL"
+      },
+      {
+        "id": 1002,
+        "name": "Mbappé",
+        "position": "DEL"
+      }
+    ]
+  }
+}

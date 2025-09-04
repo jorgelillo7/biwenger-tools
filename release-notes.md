@@ -4,13 +4,26 @@ Aquí se documenta la increíble y a veces caótica evolución de nuestro peque�
 
 ---
 
+### **v3.2 - El Verificador Inagotable (5 de Septiembre, 2025)**
+
+Una actualización vital para la robustez del proyecto, que introduce un sistema de pruebas completo para garantizar la fiabilidad del código y la estabilidad de las funcionalidades existentes.
+
+  * **🧪 Un paso más allá en la calidad del código:** Se implementa un **sólido sistema de pruebas unitarias** utilizando **`pytest`** en todos los módulos (`core`, `scraper_job`, `teams_analyzer`, `web`). Esto asegura que cada componente del proyecto funcione como se espera.
+  * **🛡️ Cobertura exhaustiva:** Las pruebas incluyen la validación del cliente de Biwenger, los servicios de Google Cloud, el procesamiento de datos, la lógica de los *scrapers*, y los *endpoints* de la aplicación web.
+  * **✅ Flujo de trabajo mejorado:** Con las pruebas en su lugar, podemos introducir nuevas funcionalidades y refactorizar el código con total confianza, sabiendo que cualquier regresión será detectada automáticamente.
+  * **🎉 ¡Por fin tenemos tests\!** Un hito importante para el proyecto, que nos acerca a prácticas de desarrollo más profesionales y sostenibles a largo plazo.
+  Un proyecto sin test... me sentía sucio :O, más vale tarde que nunca (aunque sean test con ayuda de la IA)
+
+
+---
+
 ### **v3.1 - La Sincronización Definitiva (3 de Septiembre, 2025)**
 
 Una actualización que consolida la arquitectura del proyecto y simplifica el flujo de trabajo de desarrollo, eliminando los errores de configuración más comunes y preparando la base para futuras expansiones.
 
 * **⚙️ Entorno de Desarrollo Unificado**: Se centraliza el entorno virtual de Python en un único `venv` en la raíz del proyecto. Este cambio crucial resuelve conflictos de dependencias entre módulos y asegura que el linter, el formateador y el intérprete funcionen de manera consistente.
 * **📦 Gestión Simplificada de Dependencias**: Al consolidar el `venv`, los comandos de instalación se simplifican, eliminando la necesidad de activar y desactivar múltiples entornos. Todas las dependencias ahora se instalan en un solo lugar, mejorando la coherencia.
-* **✅ Integración Continua Local y en la Nube**: Se han verificado y optimizado los procesos de ejecución, construcción de imágenes y despliegue para todos los módulos (`web`, `scraper-job`, `teams_analyzer`), garantizando que funcionen sin problemas tanto en entornos locales (con Docker) como en Google Cloud Platform. (menos teams_analyzer)
+* **✅ Integración Continua Local y en la Nube**: Se han verificado y optimizado los procesos de ejecución, construcción de imágenes y despliegue para todos los módulos (`web`, `scraper_job`, `teams_analyzer`), garantizando que funcionen sin problemas tanto en entornos locales (con Docker) como en Google Cloud Platform. (menos teams_analyzer)
 * **🔗 Importaciones y Estilo de Código Uniforme**: Se ha validado la importación de módulos del `core` y la aplicación de reglas de estilo de código con **Flake8** y **Black**, asegurando que el proyecto mantenga su calidad y cohesión a lo largo de las nuevas funcionalidades.
 
 ---

@@ -12,7 +12,7 @@
 
 Este proyecto se divide en tres componentes principales que trabajan juntos para archivar, visualizar y analizar los datos de una liga de Biwenger.
 
-1.  **Scraper de Mensajes (`scraper-job`):** Un script de Python automatizado que se conecta a Biwenger, extrae todos los comunicados, los categoriza (`comunicado`, `dato`, `cesion`), pre-procesa los datos de participación y guarda todo en archivos CSV en Google Drive.
+1.  **Scraper de Mensajes (`scraper_job`):** Un script de Python automatizado que se conecta a Biwenger, extrae todos los comunicados, los categoriza (`comunicado`, `dato`, `cesion`), pre-procesa los datos de participación y guarda todo en archivos CSV en Google Drive.
 
 2.  **Aplicación Web (`web-app`):** Una aplicación web ligera con Flask que lee los datos desde los archivos CSV y un Google Sheet para presentarlos en una interfaz limpia, elegante y totalmente responsive.
 

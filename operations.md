@@ -19,7 +19,7 @@ source .venv/bin/activate
 
 # Instala todas las dependencias
 pip install -r web/requirements.txt
-pip install -r scraper-job/requirements.txt
+pip install -r scraper_job/requirements.txt
 pip install -r teams_analyzer/requirements.txt
 pip install -e core/
 ```
@@ -41,11 +41,11 @@ pip install -e core/
 * **1.2 Scraper Job**
     * **Ejecutar local:**
         ```bash
-        python3 -m scraper-job.get_messages
+        python3 -m scraper_job.get_messages
         ```
     * **Docker local:**
         ```bash
-        docker build -t biwenger-scraper:latest -f scraper-job/Dockerfile .
+        docker build -t biwenger-scraper:latest -f scraper_job/Dockerfile .
         docker run --rm biwenger-scraper:latest
         ```
 
@@ -60,8 +60,16 @@ pip install -e core/
         docker build -t biwenger-teams-analyzer:latest -f teams_analyzer/Dockerfile .
         docker run --rm --shm-size=2g biwenger-teams-analyzer:latest
         ```
+* **1.4: Pruebas Unitarias**
+Las pruebas son esenciales para asegurar la calidad y fiabilidad del código. Con **`pytest`**, puedes ejecutar todas las pruebas desde la raíz del proyecto para validar que todo funciona correctamente.
 
----
+```bash
+# Ejecuta todas las pruebas unitarias del proyecto
+pytest
+
+# Para ejecutar las pruebas de un módulo específico, por ejemplo, el core:
+pytest core/tests/
+```
 
 ### 2️⃣ Despliegue en Google Cloud
 ```bash
@@ -85,13 +93,13 @@ gcloud auth configure-docker europe-southwest1-docker.pkg.dev
 * **2.2 Scraper Job**
     * **Construir y subir imagen Docker:**
         ```bash
-        docker build --platform linux/amd64 -t europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job -f scraper-job/Dockerfile .
-        docker push europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job
+        docker build --platform linux/amd64 -t europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job -f scraper_job/Dockerfile .
+        docker push europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job
         ```
     * **Crear Job (solo la primera vez):**
         ```bash
         gcloud run jobs create biwenger-scraper-data \
-            --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job \
+            --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
             --region europe-southwest1 \
             --set-secrets="/gdrive_client/client_secrets.json=client_secrets_json:latest" \
             --set-secrets="/gdrive_token/token.json=token_json:latest" \
@@ -102,13 +110,13 @@ gcloud auth configure-docker europe-southwest1-docker.pkg.dev
     * **Actualizar Job (nueva versión o secretos):**
         ```bash
         gcloud run jobs update biwenger-scraper-data \
-            --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job \
+            --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
             --region europe-southwest1
         ```
 
         ```bash
         gcloud run jobs update biwenger-scraper-data \
-        --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job \
+        --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
         --region europe-southwest1 \
         --set-secrets="/gdrive_sa/biwenger-tools-sa.json=biwenger_tools_sa:latest" \
         --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \

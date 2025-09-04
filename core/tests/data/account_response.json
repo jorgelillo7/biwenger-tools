@@ -1,0 +1,14 @@
+{
+  "data": {
+    "leagues": [
+      {
+        "id": "123456",
+        "name": "MiLiga de Prueba",
+        "user": {
+          "id": 98765,
+          "name": "Usuario de Prueba"
+        }
+      }
+    ]
+  }
+}

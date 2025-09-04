@@ -1,4 +1,4 @@
-# scraper-job/requirements.txt
+# scraper_job/requirements.txt
 # Dependencias principales del scraper
 # Para decodificar texto sin acentos
 unidecode
@@ -12,4 +12,5 @@ python-dotenv
 # Herramientas de desarrollo
 black
 flake8
-#pytest
+pytest
+freezegun

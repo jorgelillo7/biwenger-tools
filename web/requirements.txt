@@ -13,4 +13,4 @@ python-dateutil
 # Herramientas de desarrollo
 black
 flake8
-#pytest
+pytest

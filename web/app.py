@@ -16,7 +16,7 @@ from flask import (
     jsonify,
 )
 
-from . import config
+from web import config
 from core.gcp_services import (
     get_google_service,
     find_file_on_drive,

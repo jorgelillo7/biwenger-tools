@@ -1,0 +1,16 @@
+{
+  "data": {
+    "messages": [
+      {
+        "id": 1,
+        "text": "¡Bienvenidos a la liga!",
+        "author": "Farolillo Oracle United"
+      },
+      {
+        "id": 2,
+        "text": "Clausulazo a Yamal en cuánto os despistéis",
+        "author": "Rayo Entrebirras"
+      }
+    ]
+  }
+}

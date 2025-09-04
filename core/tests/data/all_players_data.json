@@ -1,0 +1,18 @@
+{
+  "data": {
+    "players": {
+      "1001": {
+        "id": 1001,
+        "name": "Yamal",
+        "teamId": 1,
+        "positionId": 1
+      },
+      "1002": {
+        "id": 1002,
+        "name": "Mbappé",
+        "teamId": 2,
+        "positionId": 2
+      }
+    }
+  }
+}
