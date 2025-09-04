@@ -23,7 +23,7 @@ if not RUNNING_IN_DOCKER:
     from webdriver_manager.chrome import ChromeDriverManager
 
 from teams_analyzer import config
-from logic.player_matching import normalize_name
+from teams_analyzer.logic.player_matching import normalize_name
 
 
 def fetch_jp_player_tips():

@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 
 from scraper_job import config
-from logic.processing import (
+from scraper_job.logic.processing import (
     categorize_title,
     process_participation,
     sort_messages,
