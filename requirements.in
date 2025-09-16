@@ -1,0 +1,72 @@
+
+# From: core/requirements.txt
+# core/requirements.txt
+requests
+google-api-python-client
+google-auth-oauthlib
+google-auth
+pytz
+python-dateutil
+
+# Herramientas de desarrollo
+black
+flake8
+pytest
+requests-mock
+# From: scraper_job/requirements.txt
+# scraper_job/requirements.txt
+# Dependencias principales del scraper
+# Para decodificar texto sin acentos
+unidecode
+
+# Para el parsing de HTML
+beautifulsoup4
+
+# Para la gestión de variables de entorno
+python-dotenv
+
+# Herramientas de desarrollo
+black
+flake8
+pytest
+freezegun
+# From: teams_analyzer/requirements.txt
+# teams-analyzer/requirements.txt
+# Para el manejo de variables de entorno
+python-dotenv
+
+# Para el scraping web
+beautifulsoup4
+requests
+
+# Para el scraping avanzado con navegadores headless
+selenium
+webdriver-manager
+
+# Para decodificar texto sin acentos
+unidecode
+
+# Herramientas de desarrollo
+black
+flake8
+pytest
+# From: web/requirements.txt
+# web/requirements.txt
+# Dependencias de Flask y otras librerías directas
+Flask
+python-dotenv
+unidecode
+beautifulsoup4
+gunicorn
+
+# Para el manejo de fechas y zonas horarias
+pytz
+python-dateutil
+
+# Herramientas de desarrollo
+black
+flake8
+pytest
+
+# Añadido para resolver el problema de dependencias transitivas de Flask
+importlib-metadata

@@ -1,0 +1,35 @@
+# MODULE.bazel
+module(
+    name = "biwenger-tools",
+    version = "1.0",
+)
+
+bazel_dep(name = "rules_python", version = "0.36.0", repo_name = "bazel-contrib_rules_python")
+bazel_dep(name = "rules_oci", version = "1.7.4")
+
+pip = use_extension("@bazel-contrib_rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "pypi",
+    python_version = "3.11",
+    requirements_lock = "//:requirements_lock.txt",
+)
+use_repo(pip, "pypi")
+
+python = use_extension("@bazel-contrib_rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    python_version = "3.11",
+)
+
+# SECCIÓN CORREGIDA: Usamos el digest y las plataformas que nos sugiere el warning de Bazel
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "python_base_image",
+    image = "python:3.11-slim-bookworm",
+    # ¡DIGEST Y PLATAFORMAS OBTENIDOS DEL LOG DE ERROR!
+
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+    ],
+)
+use_repo(oci, "python_base_image")

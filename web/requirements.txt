@@ -5,6 +5,7 @@ python-dotenv
 unidecode
 beautifulsoup4
 gunicorn
+importlib-metadata
 
 # Para el manejo de fechas y zonas horarias
 pytz

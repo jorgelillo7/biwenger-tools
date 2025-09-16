@@ -10,19 +10,141 @@ Antes de ejecutar cualquier comando, asegúrate de tener un entorno virtual gene
 
 **Nota:** El entorno virtual se ha configurado de forma centralizada en la raíz del proyecto para simplificar el flujo de trabajo y evitar colisiones de dependencias entre los diferentes módulos.
 
-```bash
-# Crea un entorno virtual único en la raíz del proyecto
-python3 -m venv .venv
-
-# Actívalo (en Linux/macOS)
-source .venv/bin/activate
-
-# Instala todas las dependencias
-pip install -r web/requirements.txt
-pip install -r scraper_job/requirements.txt
-pip install -r teams_analyzer/requirements.txt
-pip install -e core/
 ```
+brew install bazelisk
+brew install buildifier
+```
+
+extensión vs code Bazel (The Bazel Team)
+bazel clean --expunge
+
+pip install pip-tools
+```
+{
+  for req_file in core/requirements.txt scraper_job/requirements.txt teams_analyzer/requirements.txt web/requirements.txt; do
+    echo; echo "# From: $req_file"; cat "$req_file";
+  done
+} > requirements.in
+```
+pip-compile requirements.in -o requirements_lock.txt
+
+
+
+
+
+
+Sí, por supuesto. Tienes toda la razón, es una idea excelente.
+
+Añadir ese paso previo es el **flujo de trabajo profesional y recomendado** para un monorepo. Mantiene cada módulo (`core`, `web`, etc.) declarando sus propias dependencias, lo que lo hace mucho más limpio y escalable.
+
+He reescrito la sección del `README` para reflejar este proceso mejorado.
+
+-----
+
+## 📦 Cómo Añadir o Actualizar Dependencias de Python
+
+Nuestro proyecto usa un sistema de tres niveles para gestionar las dependencias, manteniendo los módulos aislados y garantizando builds 100% reproducibles.
+
+1.  **`[módulo]/requirements.txt`** (ej: `core/requirements.txt`): Es el **punto de partida y la fuente de verdad**. Aquí es donde tú, como desarrollador, añades o quitas las librerías que necesita un módulo específico.
+2.  **`requirements.in`**: Es un fichero **intermedio y autogenerado**. Consolida las listas de todos los módulos en un solo lugar para la siguiente herramienta. **Nunca debes editar este fichero a mano.**
+3.  **`requirements_lock.txt`**: Es el **fichero final y bloqueado** que genera el ordenador. Contiene la lista exacta de todas las librerías (directas e indirectas) con sus versiones y hashes, que es lo que Bazel usa. **Nunca debes editar este fichero a mano.**
+
+El flujo de trabajo para añadir una nueva librería (usaremos `numpy` en el módulo `core` como ejemplo) es el siguiente:
+
+### \#\#\# Paso 1: Añade la librería al `requirements.txt` del Módulo
+
+Decides que el módulo `core` necesita `numpy`. Abres `core/requirements.txt` y lo añades.
+
+**Fichero: `core/requirements.txt`**
+
+```diff
+requests
+google-api-python-client
+google-auth-oauthlib
+google-auth
+pytz
+python-dateutil
+black
+flake8
+pytest
+requests-mock
++ numpy
+```
+
+-----
+
+### \#\#\# Paso 2: Regenera el `requirements.in` Central
+
+Ahora, ejecuta este comando desde la raíz del proyecto. Recogerá los cambios que hiciste en `core/requirements.txt` y actualizará el fichero central.
+
+```bash
+{
+  for req_file in core/requirements.txt scraper_job/requirements.txt teams_analyzer/requirements.txt web/requirements.txt; do
+    echo; echo "# From: $req_file"; cat "$req_file";
+  done
+} > requirements.in
+```
+
+-----
+
+### \#\#\# Paso 3: Regenera el Fichero de Lock
+
+Este comando lee el `requirements.in` que acabas de generar y resuelve todas las dependencias, creando el `requirements_lock.txt` final.
+
+*(Recuerda tener `pip-tools` instalado: `pip install pip-tools`)*
+
+```bash
+pip-compile requirements.in -o requirements_lock.txt
+```
+
+-----
+
+### \#\#\# Paso 4: Usa la Nueva Librería en el `BUILD.bazel`
+
+Ahora que la librería ya está disponible para Bazel, ve a `core/BUILD.bazel` y añádela a la lista de dependencias (`deps`) del `py_library`.
+
+Recuerda que Bazel convierte los guiones (-) a guiones bajos (_). Para numpy, el nombre es el mismo.
+
+**Fichero: `core/BUILD.bazel`**
+
+```python
+py_library(
+    name = "core",
+    srcs = glob(["*.py"]),
+    deps = [
+        "@pypi//requests",
+        # ... (resto de dependencias)
+        # Añadimos la nueva dependencia
+        "@pypi//numpy",
+    ],
+    visibility = ["//visibility:public"],
+)
+```
+
+-----
+
+### \#\#\# Paso 5: Verifica con Bazel
+
+Finalmente, ejecuta un comando de Bazel para confirmar que todo funciona.
+
+```bash
+bazel build //...
+```
+
+Si el comando termina con éxito, has añadido la dependencia de forma limpia, aislada y reproducible.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ---
 
@@ -30,13 +152,15 @@ pip install -e core/
 * **1.1 Web App**
     * **Ejecutar localmente:**
         ```bash
-        python3 -m web.app
+            bazel run //web:web_dev_server
         ```
     * **Docker local:**
         ```bash
-        docker build -t biwenger-web:latest -f web/Dockerfile .
-        docker run -p 8080:8080 biwenger-web:latest
+            bazel run //web:load_image_to_docker
+            docker run --rm -p 8080:8080 bazel/web:latest
         ```
+
+bazel run //web:push_image_to_gcp
 
 * **1.2 Scraper Job**
     * **Ejecutar local:**

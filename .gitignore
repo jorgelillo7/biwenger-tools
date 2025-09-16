@@ -20,3 +20,6 @@ Thumbs.db
 .vscode/*
 # Metadatos del paquete
 *.egg-info/
+
+#bazel
+bazel-*

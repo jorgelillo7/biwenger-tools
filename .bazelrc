@@ -1,0 +1,7 @@
+# .bazelrc
+
+# Siempre usa el sistema de módulos Bzlmod
+common --enable_bzlmod
+
+# Usa el Bazel Central Registry (BCR) para buscar paquetes
+common --registry=https://bcr.bazel.build

@@ -1,0 +1,127 @@
+# web/BUILD.bazel
+load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
+load("@bazel-contrib_rules_python//python:defs.bzl", "py_binary", "py_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+
+py_library(
+    name = "web_lib",
+    srcs = [
+        "app.py",
+        "config.py",
+        "gunicorn_prod_runner.py", # <-- LÍNEA ELIMINADA
+    ],
+    data = glob([
+        "templates/**/*.html",
+        "static/**/*",
+    ]) + ["biwenger-tools-sa.json"],
+    imports = ["."],
+    deps = [
+        "//core",
+        "@pypi//flask",
+        "@pypi//python_dotenv",
+        "@pypi//unidecode",
+        "@pypi//beautifulsoup4",
+        "@pypi//gunicorn",
+        "@pypi//pytz",
+        "@pypi//python_dateutil",
+    ],
+)
+
+# =================================================================
+# 2. BINARIO PARA DESARROLLO LOCAL (USA FLASK)
+# =================================================================
+py_binary(
+    name = "web_dev_server",
+    main = "app.py",
+    srcs = ["app.py"],
+    data = [".env"],
+    deps = [":web_lib"],
+)
+
+# =================================================================
+# 3. BINARIO PARA PRODUCCIÓN (USA GUNICORN) Y CONTENEDOR
+# =================================================================
+py_binary(
+    name = "web_prod_server",
+    main = "gunicorn_prod_runner.py",
+    srcs = ["gunicorn_prod_runner.py"],
+    deps = [":web_lib"],
+    # Explicitly add the gunicorn dependency to the binary's data attribute
+    data = [
+        "@pypi//gunicorn",
+        "@pypi//unidecode",
+        "@pypi//beautifulsoup4",
+        "@pypi//pytz",
+        "@pypi//python_dateutil",
+    ],
+)
+
+pkg_tar(
+    name = "requirements_layer",
+    srcs = ["//:requirements_lock.txt"],
+    package_dir = "/app",
+)
+
+pkg_tar(
+    name = "core_layer",
+    srcs = [
+        "//core:core",
+    ],
+    package_dir = "/app",
+)
+
+pkg_tar(
+    name = "web_layer",
+    srcs = [
+        ":web_prod_server",
+        "app.py",
+        "config.py",
+        "gunicorn_prod_runner.py",
+    ] + glob([
+        "templates/**/*.html",
+        "static/**/*",
+    ]) + ["biwenger-tools-sa.json"],
+    package_dir = "/app/web",  # Cambiar aquí para crear /app/web/
+)
+
+oci_image(
+    name = "web_image",
+    base = "@python_base_image",
+    tars = [":requirements_layer", ":web_layer", ":core_layer"],
+    env = {
+        "COMUNICADOS_CSV_URL": "https://drive.google.com/uc?export=download&id=1t6LU3MMSQh7OxmkVwfmMTVS_MiRiaa7C",
+        "PARTICIPACION_CSV_URL": "https://drive.google.com/uc?export=download&id=1-jaQX1un9sdSVjFXGo_nhMI6Kf4ArPPm",
+        "PALMARES_CSV_URL": "https://drive.google.com/uc?export=download&id=1s1p2SmQIcq-D8pukoStTfAfh5tiYllLK",
+        "LIGAS_ESPECIALES_SHEET_ID_25_26": "1ZaFZtKLFc0K4Ku099x3iV20OBkLZz9BEvojZpyOP0es",
+        "LIGAS_ESPECIALES_SHEET_ID_24_25": "",
+        "TROFEOS_SHEET_ID_25_26": "1-ahWDHUby8KRXUZPdJqI302gnNEQTBcr1MQgqJOlk5Y",
+        "TROFEOS_SHEET_ID_24_25": "",
+        "GDRIVE_FOLDER_ID": "1DEY5pzf0iyZi3uxAFsjnE0tgVf8YiYI7",
+        "GCP_PROJECT_ID": "biwenger-tools",
+        "CLOUD_RUN_JOB_NAME": "biwenger-scraper-data",
+        "CLOUD_RUN_REGION": "europe-southwest1",
+        "SECRET_KEY": "b8e3a7f0d9c1b5a2e8f4c7d6e3a7f0d9c1b5a2e8f4c7d6e3a7f0d9c1b5a2e8f4",
+        "ADMIN_PASSWORD": "LigaVAR#Mochileros",
+    },
+    entrypoint = [
+        "/bin/sh", "-c",
+        "pip install --no-cache-dir -r /app/requirements_lock.txt && cd /app/web && python gunicorn_prod_runner.py"
+    ],
+)
+
+# =================================================================
+# 5. OBJETIVOS PARA GESTIONAR LA IMAGEN DE CONTENEDOR
+# =================================================================
+
+oci_tarball(
+    name = "load_image_to_docker",
+    image = ":web_image",
+    repo_tags = ["bazel/web:latest"],
+)
+
+oci_push(
+    name = "push_image_to_gcp",
+    image = ":web_image",
+    repository = "europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/web",
+    tags = ["latest"],
+)
