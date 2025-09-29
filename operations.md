@@ -1,43 +1,184 @@
-# 🛠 OPERATIONS - Biwenger Tools
+# 🛠️ OPERATIONS - Biwenger Tools
 
-Este documento centraliza comandos reproducibles para **desarrollo, pruebas, despliegue y mantenimiento**.
+Esta guía centraliza los comandos y flujos de trabajo para el **desarrollo, testing, despliegue y mantenimiento** de las herramientas de Biwenger.
 
----
+📜 Índice
 
-### **Configuración del Entorno Local**
-
-Antes de ejecutar cualquier comando, asegúrate de tener un entorno virtual general configurado para evitar conflictos de dependencias entre los diferentes módulos.
-
-**Nota:** El entorno virtual se ha configurado de forma centralizada en la raíz del proyecto para simplificar el flujo de trabajo y evitar colisiones de dependencias entre los diferentes módulos.
-
-```
-brew install bazelisk
-brew install buildifier
-```
-
-extensión vs code Bazel (The Bazel Team)
-bazel clean --expunge
-
-pip install pip-tools
-```
-{
-  for req_file in core/requirements.txt scraper_job/requirements.txt teams_analyzer/requirements.txt web/requirements.txt; do
-    echo; echo "# From: $req_file"; cat "$req_file";
-  done
-} > requirements.in
-```
-pip-compile requirements.in -o requirements_lock.txt
+- [🛠️ OPERATIONS - Biwenger Tools](#️-operations---biwenger-tools)
+  - [📋 Requisitos Previos](#-requisitos-previos)
+  - [🚀 Módulos del Proyecto](#-módulos-del-proyecto)
+    - [1. Biwenger Web App](#1-biwenger-web-app)
+    - [2. Scraper Job](#2-scraper-job)
+    - [3. Teams Analyzer](#3-teams-analyzer)
+    - [Extra. Core](#extra-core)
+  - [📦 Cómo Añadir o Actualizar Dependencias de Python](#-cómo-añadir-o-actualizar-dependencias-de-python)
+    - [### Paso 1: Añade la librería al `requirements.txt` del Módulo](#-paso-1-añade-la-librería-al-requirementstxt-del-módulo)
+    - [### Paso 2: Regenera el `requirements.in` Central](#-paso-2-regenera-el-requirementsin-central)
+    - [### Paso 3: Regenera el Fichero de Lock](#-paso-3-regenera-el-fichero-de-lock)
+    - [### Paso 4: Usa la Nueva Librería en el `BUILD.bazel`](#-paso-4-usa-la-nueva-librería-en-el-buildbazel)
+    - [### Paso 5: Verifica con Bazel](#-paso-5-verifica-con-bazel)
+  - [🔐 Gestión de Secretos](#-gestión-de-secretos)
+    - [Ejemplos de creación de secretos en GCP](#ejemplos-de-creación-de-secretos-en-gcp)
+    - [Para actualizar un secreto (ej. token.json):](#para-actualizar-un-secreto-ej-tokenjson)
+  - [💅 Linter y Formateador Automático (VS Code)](#-linter-y-formateador-automático-vs-code)
+  - [🧹 Limpieza y Control de Costes en GCP](#-limpieza-y-control-de-costes-en-gcp)
+    - [Artifact Registry](#artifact-registry)
+  - [⚠️ Notas Importantes](#️-notas-importantes)
 
 
+## 📋 Requisitos Previos
 
+Antes de empezar, asegúrate de tener instalado lo siguiente:
 
+  * **Python 3.x**
+  * **Visual Studio Code** con la extensión [Bazel (The Bazel Team)](https://marketplace.visualstudio.com/items?itemName=BazelBuild.vscode-bazel).
+  * **Herramientas de línea de comandos:**
+    ```bash
+      brew install bazelisk
+      brew install buildifier
+    ```
+  * **Despliegue en Google Cloud:**
+  ```bash
+    gcloud auth login
+    gcloud config set project biwenger-tools
+    gcloud auth configure-docker europe-southwest1-docker.pkg.dev
+  ```
 
+**Nota importante:** Se utiliza un único entorno virtual en la raíz del proyecto para simplificar la gestión de dependencias y evitar conflictos entre módulos.
 
-Sí, por supuesto. Tienes toda la razón, es una idea excelente.
+  ```bash
+    python3 -m venv venv
+    source venv/bin/activate  # En Windows: .venv\Scripts\activate
 
-Añadir ese paso previo es el **flujo de trabajo profesional y recomendado** para un monorepo. Mantiene cada módulo (`core`, `web`, etc.) declarando sus propias dependencias, lo que lo hace mucho más limpio y escalable.
+    pip install -e core/requirements.txt
+    pip install -r web/requirements.txt
+    pip install -r scraper_job/requirements.txt
+    pip install -r teams_analyzer/requirements.txt
+    pip install pip-tools
+  ```
 
-He reescrito la sección del `README` para reflejar este proceso mejorado.
+## 🚀 Módulos del Proyecto
+
+Aquí se describen los comandos para ejecutar cada componente
+
+### 1\. Biwenger Web App
+
+  * **Ejecutar en local (servidor de desarrollo):**
+
+    ```bash
+      bazel run //web:web_dev_server
+    ```
+  * **Tests:**
+    ```
+      bazel test //web:web_tests --test_output=all --test_arg=-v
+      bazel test //web:web_tests --test_output=all --test_arg=-v --cache_test_results=no
+
+      pytest web/tests/
+    ```
+
+  * **Ejecutar con Docker localmente:**
+
+    ```bash
+      # Cargar la imagen en Docker
+      bazel run //web:load_image_to_docker_local
+
+      # Iniciar el contenedor
+      docker run --rm -p 8080:8080 bazel/web:local
+    ```
+
+    > **Consejo:** Si `Ctrl+C` no detiene el contenedor, usa `docker ps` para encontrar su ID y luego `docker kill <container_id>`.
+
+  * **Desplegar en producción:**
+
+    ```bash
+      # Empaquetar y subir la imagen a GCP
+      bazel run //web:push_image_to_gcp --platforms=//platforms:linux_amd64
+
+      # Ejecutar el script de despliegue
+      cd web
+      ./deploy.sh
+    ```
+### 2\. Scraper Job
+
+  * **Ejecutar en local:**
+
+    ```bash
+      python3 -m scraper_job.get_messages
+    ```
+
+  * **Ejecutar con Docker localmente:**
+
+    ```bash
+      docker build -t biwenger-scraper:latest -f scraper_job/Dockerfile .
+      docker run --rm biwenger-scraper:latest
+    ```
+
+   * **Desplegar en producción:**
+      * **Construir y subir imagen Docker:**
+            ```bash
+            docker build --platform linux/amd64 -t europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job -f scraper_job/Dockerfile .
+            docker push europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job
+            ```
+      * **Crear Job (solo la primera vez):**
+          ```bash
+          gcloud run jobs create biwenger-scraper-data \
+              --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
+              --region europe-southwest1 \
+              --set-secrets="/gdrive_client/client_secrets.json=client_secrets_json:latest" \
+              --set-secrets="/gdrive_token/token.json=token_json:latest" \
+              --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \
+              --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest" \
+              --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
+          ```
+      * **Actualizar Job (nueva versión o secretos):**
+          ```bash
+          gcloud run jobs update biwenger-scraper-data \
+              --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
+              --region europe-southwest1
+          ```
+
+          ```bash
+          gcloud run jobs update biwenger-scraper-data \
+          --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job \
+          --region europe-southwest1 \
+          --set-secrets="/gdrive_sa/biwenger-tools-sa.json=biwenger-tools-sa-regional:latest" \
+          --set-secrets="/biwenger_email/biwenger-email=biwenger-email-regional:latest" \
+          --set-secrets="/biwenger_password/biwenger-password=biwenger-password-regional:latest" \
+          --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id-regional:latest"
+          ```
+      * **Ejecutar Job manualmente:**
+          ```bash
+          gcloud run jobs execute biwenger-scraper-data --region europe-southwest1
+          ```
+
+### 3\. Teams Analyzer
+
+  * **Configuración:** Asegúrate de tener un archivo `.env` con las credenciales de Biwenger y Telegram.
+
+  * **Ejecutar en local:**
+
+    ```bash
+      python3 -m teams_analyzer.teams_analyzer
+    ```
+
+  * **Ejecutar con Docker localmente:**
+
+    ```bash
+      docker build -t biwenger-teams-analyzer:latest -f teams_analyzer/Dockerfile .
+      docker run --rm --shm-size=2g biwenger-teams-analyzer:latest
+    ```
+  * **Desplegar en producción:**
+    Pendiente
+
+### Extra\. Core
+
+  * **Tests:**
+    ```
+      bazel test //core:core_tests --test_output=all --test_arg=-v
+      bazel test //core:core_tests --test_output=all --test_arg=-v --cache_test_results=no
+
+      pytest core/tests/
+    ```
 
 -----
 
@@ -127,319 +268,145 @@ py_library(
 
 Finalmente, ejecuta un comando de Bazel para confirmar que todo funciona.
 
-```bash
-bazel build //...
-```
+  ```bash
+  bazel build //...
+
+  ```
 
 Si el comando termina con éxito, has añadido la dependencia de forma limpia, aislada y reproducible.
 
 
 
+## 🔐 Gestión de Secretos
 
+  * **Desarrollo local:** Utiliza archivos `.env` en la raíz de cada módulo.
+  * **Producción:** Usa **Google Secret Manager**.
 
-
-
-
-
-
-
-
-
-
----
-
-### 1️⃣ Entorno Local (comandos siempre desde la raíz)
-* **1.1 Web App**
-    * **Ejecutar localmente:**
-        ```bash
-            bazel run //web:web_dev_server
-        ```
-    * **Docker local:**
-        ```bash
-            bazel run //web:load_image_to_docker
-            docker run --rm -p 8080:8080 bazel/web:latest
-        ```
-
-bazel run //web:push_image_to_gcp
-
-* **1.2 Scraper Job**
-    * **Ejecutar local:**
-        ```bash
-        python3 -m scraper_job.get_messages
-        ```
-    * **Docker local:**
-        ```bash
-        docker build -t biwenger-scraper:latest -f scraper_job/Dockerfile .
-        docker run --rm biwenger-scraper:latest
-        ```
-
-* **1.3 Teams Analyzer**
-    * **Configurar .env con credenciales de Biwenger y Telegram.**
-    * **Ejecutar local:**
-        ```bash
-        python3 -m teams_analyzer.teams_analyzer
-        ```
-    * **Docker local:**
-        ```bash
-        docker build -t biwenger-teams-analyzer:latest -f teams_analyzer/Dockerfile .
-        docker run --rm --shm-size=2g biwenger-teams-analyzer:latest
-        ```
-* **1.4: Pruebas Unitarias**
-Las pruebas son esenciales para asegurar la calidad y fiabilidad del código. Con **`pytest`**, puedes ejecutar todas las pruebas desde la raíz del proyecto para validar que todo funciona correctamente.
-
+### Ejemplos de creación de secretos en GCP
 ```bash
-# Ejecuta todas las pruebas unitarias del proyecto
-pytest
+# Crear secreto desde un archivo (ej: service account)
+gcloud secrets create biwenger-tools-sa-regional \
+  --data-file="biwenger-tools-sa.json" \
+  --replication-policy="user-managed" \
+  --locations="$REGION"
 
-# Para ejecutar las pruebas de un módulo específico, por ejemplo, el core:
-pytest core/tests/
+# Crear secretos desde la línea de comandos
+echo -n "TU_EMAIL@gmail.com" | gcloud secrets create biwenger-email-regional \
+  --data-file=- \
+  --replication-policy="user-managed" \
+  --locations="$REGION"
+
+echo -n "TU_CONTRASEÑA" | gcloud secrets create biwenger-password-regional \
+  --data-file=- \
+  --replication-policy="user-managed" \
+  --locations="$REGION"
+
+echo -n "ID_DE_LA_CARPETA_DE_DRIVE" | gcloud secrets create gdrive-folder-id-regional \
+  --data-file=- \
+  --replication-policy="user-managed" \
+  --locations="$REGION"
 ```
 
-### 2️⃣ Despliegue en Google Cloud
-```bash
-gcloud auth login
-gcloud config set project biwenger-tools
-gcloud auth configure-docker europe-southwest1-docker.pkg.dev
-```
-
-* **2.1 Web App**
-    * **Construir y subir imagen Docker desde la raíz:**
-        ```bash
-        docker build --platform linux/amd64 -t europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/web -f web/Dockerfile .
-        docker push europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/web
-        ```
-    * **Deploy usando script que lee .env:**
-        ```bash
-        cd web
-        ./deploy.sh
-        ```
-
-* **2.2 Scraper Job**
-    * **Construir y subir imagen Docker:**
-        ```bash
-        docker build --platform linux/amd64 -t europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job -f scraper_job/Dockerfile .
-        docker push europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job
-        ```
-    * **Crear Job (solo la primera vez):**
-        ```bash
-        gcloud run jobs create biwenger-scraper-data \
-            --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
-            --region europe-southwest1 \
-            --set-secrets="/gdrive_client/client_secrets.json=client_secrets_json:latest" \
-            --set-secrets="/gdrive_token/token.json=token_json:latest" \
-            --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \
-            --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest" \
-            --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
-        ```
-    * **Actualizar Job (nueva versión o secretos):**
-        ```bash
-        gcloud run jobs update biwenger-scraper-data \
-            --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
-            --region europe-southwest1
-        ```
-
-        ```bash
-        gcloud run jobs update biwenger-scraper-data \
-        --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
-        --region europe-southwest1 \
-        --set-secrets="/gdrive_sa/biwenger-tools-sa.json=biwenger_tools_sa:latest" \
-        --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \
-        --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest" \
-        --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
-        ```
-    * **Ejecutar Job manualmente:**
-        ```bash
-        gcloud run jobs execute biwenger-scraper-data --region europe-southwest1
-        ```
-
-* **2.3 Teams Analyzer**
-    * Pendiente: despliegue en Cloud Run cuando sea necesario.
-
----
-
-### 3️⃣ Gestión de Secretos
-
-* **Variables locales:** usar `.env` para desarrollo.
-* **Producción:** usar Google Secret Manager.
-
-#### ejemplos
-```bash
-# Asegúrate de que los archivos están en la carpeta dónde ejecutas el comando
-gcloud secrets create biwenger_tools_sa --data-file="biwenger-tools-sa.json"
-```
-
-#### Credenciales de Biwenger y Drive (como texto):
-```bash
-echo -n "TU_EMAIL@gmail.com" | gcloud secrets create biwenger-email --data-file=-
-echo -n "TU_CONTRASEÑA" | gcloud secrets create biwenger-password --data-file=-
-echo -n "ID_DE_LA_CARPETA_DE_DRIVE" | gcloud secrets create gdrive-folder-id --data-file=-
-```
-
-#### Para actualizar un secreto (ej. token.json):
+### Para actualizar un secreto (ej. token.json):
 ```bash
 gcloud secrets versions add token_json --data-file="token.json"
 ```
 
 ---
-### 🚀 Configuración de Linter y Formateo Automático con Black y Flake8
+## 💅 Linter y Formateador Automático (VS Code)
 
-Este documento detalla cómo configurar tu entorno de desarrollo en VS Code para aplicar linter y formateo automático utilizando **Flake8** y **Black Formatter**. Esto asegura que tu código Python mantenga un estilo consistente y libre de errores.
+Configura **Flake8** (linter) y **Black** (formateador) para mantener un código limpio y consistente.
 
----
+1.  **Instala las extensiones:**
 
-#### 🛠️ Requisitos Previos
+      * `ms-python.python`
+      * `ms-python.black-formatter`
 
-Antes de comenzar, asegúrate de tener:
+2.  **Selecciona el Intérprete de Python:**
 
-* **Python 3.x** instalado en tu sistema.
-* **Visual Studio Code** instalado.
+      * Abre la paleta de comandos (`Ctrl+Shift+P` o `Cmd+Shift+P`).
+      * Busca y selecciona `Python: Select Interpreter`.
+      * Elige el intérprete de tu entorno virtual (`./venv/bin/python`).
 
----
+3.  **Configura el `settings.json`:**
 
-#### 📦 Configuración del Entorno Virtual y Herramientas
+      * Abre la paleta de comandos y busca `Preferences: Open Workspace Settings (JSON)`.
+      * Añade la siguiente configuración:
 
-Sigue estos pasos para preparar tu entorno de desarrollo:
+    <!-- end list -->
 
-##### 1. Crear y Activar el Entorno Virtual
-
-En el modulo deseado activa el entorno virutal e instala las dependencias del requirement
-
-```bash
-python3 -m venv venv
-source venv/bin/activate  # En Windows usa: .venv\Scripts\activate
-```
-
-##### 2. Instalar Black y Flake8 
-
-Con el entorno virtual activado, instala las herramientas de linting y formateo (inluidas en cada requirements.txt)
-
-```bash
-pip install -r requirements.txt
-pip install -e ../core
-```
-
------
-
-#### ⚙️ Configuración en Visual Studio Code
-
-Para que VS Code utilice estas herramientas, necesitarás instalar algunas extensiones y ajustar la configuración del espacio de trabajo.
-
-##### 1\. Instalar las Extensiones Necesarias
-
-Abre VS Code y ve a la vista de Extensiones (`Ctrl+Shift+X` o `Cmd+Shift+X` en macOS). Instala las siguientes extensiones:
-
-  * **Python**: La extensión oficial de Microsoft (ID: `ms-python.python`). Es fundamental para el soporte de Python en VS Code.
-  * **Black Formatter**: La extensión oficial de Microsoft para Black (ID: `ms-python.black-formatter`).
-
-#### 2\. Seleccionar el Intérprete de Python
-
-Es crucial que VS Code sepa qué intérprete de Python usar para tu proyecto.
-
-1.  Abre la **Paleta de Comandos** (`Ctrl+Shift+P` o `Cmd+Shift+P`).
-2.  Escribe `Python: Select Interpreter` y presiona `Enter`.
-3.  Selecciona el intérprete de tu proyecto, que debería aparecer como: `./venv/bin/python`
-
-##### 3\. Configurar Linting y Formateo Automático
-
-Ahora, configura tu espacio de trabajo para usar Black y Flake8.
-
-1.  Abre la **Paleta de Comandos** (`Ctrl+Shift+P` o `Cmd+Shift+P`).
-2.  Escribe `Preferences: Open Workspace Settings (JSON)` y selecciona esta opción. Esto abrirá el archivo `settings.json` dentro de la carpeta `.vscode` de tu proyecto.
-3.  Copia y pega la siguiente configuración dentro de las llaves `{}` de tu archivo `settings.json`. Si ya tienes configuraciones, simplemente añade estas líneas, asegurándote de no duplicar llaves.
-
-```json
-{
-    // Activa el linter de Python
-    "python.linting.enabled": true,
-    // Establece flake8 como tu linter
-    "python.linting.flake8Enabled": true,
-
-    // --- Configuración para Black Formatter ---
-    // Establece Black como el formateador por defecto para Python
-    "editor.defaultFormatter": "ms-python.black-formatter",
-    // Formatea el código automáticamente al guardar
-    "editor.formatOnSave": true,
-
-    // (Opcional) Permite que las acciones de código (como los arreglos del linter) se apliquen al guardar
-    "editor.codeActionsOnSave": {
-        "source.fixAll": "explicit",
-        "source.organizeImports": "explicit" // Opcional: para ordenar automáticamente los imports con isort
+    ```json
+    {
+        "python.linting.enabled": true,
+        "python.linting.flake8Enabled": true,
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit"
+        }
     }
-}
-```
-
-##### 4\. Configuración de Flake8 (Opcional)
-
-Puedes personalizar las reglas de Flake8 creando un archivo llamado `.flake8` en la raíz de tu proyecto. Un ejemplo común para compatibilidad con Black es:
-
-```ini
-# .flake8
-[flake8]
-max-line-length = 88
-ignore = E203, W503
-exclude = .git,
-          __pycache__,
-          .venv,
-          venv,
-          *.md
-```
-
-  * `max-line-length = 88`: Alinea la longitud máxima de línea con la de Black.
-  * `ignore = E203, W503`: Ignora reglas que pueden entrar en conflicto con Black.
-  * `exclude`: Lista de directorios y archivos a ignorar por Flake8.
-
------
-
-#### ✅ Verificación
-
-Una vez que hayas completado estos pasos:
-
-1.  **Reinicia VS Code**.
-2.  Abre un archivo Python (`.py`) en tu proyecto.
-3.  Escribe código que contenga un error de sintaxis o que no siga las reglas de estilo (por ejemplo, una línea muy larga).
-4.  Deberías ver advertencias o errores subrayados por Flake8.
-5.  Al guardar el archivo (`Ctrl+S` o `Cmd+S`), Black debería formatear automáticamente el código.
-
----
-
-### 4️⃣ Limpieza de imágenes y control de costos
-
------
-
-#### Artifact Registry
-
-  * **Crear repositorio Docker (1º vez):**
     ```
+
+4.  **(Opcional) Configura Flake8:**
+
+      * Crea un archivo `.flake8` en la raíz del proyecto para alinear sus reglas con Black.
+
+    <!-- end list -->
+
+    ```ini
+    [flake8]
+    max-line-length = 88
+    ignore = E203, W503
+    exclude = .git,__pycache__,.venv,venv,*.md
+    ```
+
+Una vez configurado, VS Code te marcará errores y formateará tu código automáticamente al guardar.
+
+
+## 🧹 Limpieza y Control de Costes en GCP
+
+### Artifact Registry
+
+  * **Crear el repositorio Docker (solo la primera vez):**
+
+    ```bash
     gcloud artifacts repositories create biwenger-docker \
         --repository-format=docker \
         --location=europe-southwest1 \
         --description="Docker images for Biwenger Tools"
     ```
-  * **Listar repositorios:**
-    ```
-    gcloud artifacts repositories list --project=biwenger-tools
-    ```
-  * **Listar imágenes:**
-    ```
+
+  * **Listar imágenes en el repositorio:**
+
+    ```bash
     gcloud artifacts docker images list europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker
     ```
+
   * **Limpiar imágenes antiguas (script):**
-    ```
+
+    ```bash
     ./clean-images-artifact.sh
     ```
-    Este script elimina todas las versiones viejas de cada imagen, dejando solo la última con la etiqueta `latest`.
+
+    > Este script elimina todas las imágenes antiguas, conservando solo la etiquetada como `latest`.
+
   * **Revisar costes (script):**
-    ```
+
+    ```bash
     ./check-gcp-costs.sh
     ```
-    Este script muestra el almacenamiento usado y el uso de **Artifact Registry** y **Cloud Run**, comparándolo con el **Free Tier**.
+
+    > Este script compara el uso de **Artifact Registry** y **Cloud Run** con el *Free Tier* de GCP.
+
+    * **Limpiar contenedores docker:**
+    ```
+     docker image prune -f
+     ```
 
 -----
 
-### 5️⃣ Notas importantes
+## ⚠️ Notas Importantes
 
------
-
-  * Nunca subir archivos `biwenger-tools-sa.json`.
-  * Revisar logs en **Cloud Run** / **GCP Console** si hay fallos.
-  * Mantener `.env` en la raíz de cada miniproyecto para su ejecución.
+  * **No subas a git** el archivo de credenciales `biwenger-tools-sa.json`.
+  * Si un despliegue falla, revisa los **logs en la consola de GCP** (Cloud Run, Cloud Build, etc.).
+  * Asegúrate de tener un archivo `.env` configurado en cada módulo para el desarrollo local.

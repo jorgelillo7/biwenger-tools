@@ -134,6 +134,7 @@ oci_image(
         "LIGAS_ESPECIALES_SHEET_ID_25_26": "1ZaFZtKLFc0K4Ku099x3iV20OBkLZz9BEvojZpyOP0es",
         "TROFEOS_SHEET_ID_25_26": "1-ahWDHUby8KRXUZPdJqI302gnNEQTBcr1MQgqJOlk5Y",
         "GDRIVE_FOLDER_ID": "1DEY5pzf0iyZi3uxAFsjnE0tgVf8YiYI7",
+        "GOOGLE_APPLICATION_CREDENTIALS": "/app/web/biwenger-tools-sa.json",
     },
     entrypoint = [
         "/bin/sh", "-c",
@@ -162,7 +163,7 @@ oci_push(
     name = "push_image_to_gcp",
     image = ":web_image_gcp",  # ← Imagen limpia sin secretos
     repository = "europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/web",
-    tags = ["latest"],
+    remote_tags = ["latest"],
 )
 # bazel run //web:push_image_to_gcp
 
@@ -178,3 +179,22 @@ oci_tarball(
 )
 # bazel run //web:load_image_to_docker_clean
 # docker run --rm -p 8080:8080 -e SECRET_KEY=test -e ADMIN_PASSWORD=test bazel/web:clean
+
+# =================================================================
+# 7️⃣ TESTS UNITARIOS (PYTEST)
+# =================================================================
+py_test(
+    name = "web_tests",
+    timeout = "short",
+    main = "tests/main.py",
+    srcs = glob(["tests/**/*.py"]), # Recoge todos los archivos de test en la carpeta tests/
+    data = [
+        "biwenger-tools-sa.json",
+        ".env",
+    ],
+    deps = [
+        ":web_lib",             # Dependencia a tu código principal de la web
+        "@pypi//pytest",        # Dependencia a la librería pytest
+        "@pypi//flask",         # Flask es necesario para el test_client
+    ],
+)

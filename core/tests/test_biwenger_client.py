@@ -2,7 +2,7 @@ import pytest
 import requests_mock
 from core.biwenger_client import BiwengerClient
 
-from conftest import (
+from .test_constants import (
     TEST_LEAGUE_USERS_URL,
     TEST_PLAYERS_DATA_URL,
     TEST_MARKET_URL,

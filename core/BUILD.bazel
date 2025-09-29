@@ -18,7 +18,9 @@ py_library(
 
 py_test(
     name = "core_tests",
-    srcs = glob(["tests/test_*.py"]),
+    timeout = "short",
+    main = "tests/main.py",
+    srcs = glob(["tests/**/*.py"]),
     data = glob(["tests/data/*.json"]),
     deps = [
         ":core",

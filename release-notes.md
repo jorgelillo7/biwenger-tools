@@ -1,6 +1,18 @@
-# Release Notes del Proyecto Biwenger
+# Release Notes del Proyecto
 
-Aquí se documenta la increíble y a veces caótica evolución de nuestro pequeño gran proyecto para inmortalizar el salseo de la liga.
+Aquí se documenta la increíble y a veces caótica evolución de nuestro pequeño gran proyecto
+
+### **v4.0 - Bienvenido, Mr. Bazel (30 de Septiembre, 2025)**
+
+Una re-arquitectura total que transforma el proyecto en un **monorepo** gestionado por **Bazel**, el sistema de construcción de Google. ¿Necesidad? Ninguna. ¿Ganas de probar tecnología de vanguardia y ver hasta dónde podíamos llegar? Todas. Este cambio sienta las bases para un proyecto más rápido, escalable y profesional que nunca.
+
+* **🧱 Monorepo Unificado**: ¡Adiós a los módulos separados! Todo el código (`core`, `web`, `scraper_job`, `teams_analyzer`) ahora vive en un único repositorio. Esto simplifica la gestión de dependencias y asegura una coherencia total en todo el proyecto.
+* **🚀 Builds y Tests ultrarrápidos**: Se implementa **Bazel** para gestionar la construcción, las pruebas y los despliegues. Gracias a su sistema de caché avanzado, solo se reconstruye y se testea lo que realmente ha cambiado, reduciendo drásticamente los tiempos de espera. ¡Una maravilla!
+* **📦 Dependencias**: Lo Mejor de Dos Mundos: Se adopta un sistema de dependencias híbrido. Para el desarrollo y las pruebas locales, Bazel utiliza su grafo interno (@pypi//...) para asegurar la máxima velocidad y builds herméticos. Para la imagen Docker final, se opta por un enfoque más tradicional y robusto: se empaqueta el requirements_lock.txt y se ejecuta pip install en el arranque del contenedor. Esto nos da la reproducibilidad de un fichero lock y la compatibilidad universal de pip, evitando problemas complejos de empaquetado..
+* **🐳 Imágenes Docker con Bazel**: Los `Dockerfile` tradicionales se reemplazan por reglas `oci_image` dentro de Bazel. Ahora, la definición de las imágenes vive junto al código fuente, creando un flujo de trabajo totalmente integrado y consistente.
+* **🧹 Limpieza y Consolidación**: Se eliminan ficheros de configuración redundantes (`pyproject.toml`, `Dockerfile` en módulos migrados) para consolidar `BUILD.bazel` como la única fuente de verdad.
+Claro, aquí tienes un punto nuevo para añadir a las *release notes* de la v4.0 que captura esa idea de expansión.
+* **🌱 De Proyecto a Plataforma: El Monorepo se Expande**: Con la potencia y escalabilidad de Bazel, el repositorio deja de ser exclusivo de Biwenger. La arquitectura actual se convierte en una **plantilla robusta y reutilizable** para lanzar nuevos proyectos de cualquier tipo, aprovechando toda la infraestructura, gestión de dependencias y despliegue en GCP ya establecida. Es el siguiente paso lógico: transformar este proyecto en un hub para futuras ideas y experimentos.
 
 ---
 
