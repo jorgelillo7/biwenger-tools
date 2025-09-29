@@ -1,0 +1,142 @@
+# scraper_job/BUILD.bazel
+load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
+load("@bazel-contrib_rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+
+# =================================================================
+# 1️⃣ LIBRERÍA PRINCIPAL
+# =================================================================
+py_library(
+    name = "scraper_job_lib",
+    srcs = glob(["**/*.py"]),
+    deps = [
+        "//core",
+        "@pypi//unidecode",
+        "@pypi//beautifulsoup4",
+        "@pypi//python_dotenv",
+    ],
+)
+
+# =================================================================
+# 2️⃣ EJECUCIÓN LOCAL (SIN DOCKER)
+# =================================================================
+py_binary(
+    name = "scraper_job_local",
+    main = "get_messages.py",
+    srcs = ["get_messages.py"],
+    data = [
+        "biwenger-tools-sa.json",
+        ".env",
+    ],
+    deps = [":scraper_job_lib"],
+)
+
+# =================================================================
+# 3️⃣ CAPAS PARA LA IMAGEN DOCKER
+# =================================================================
+pkg_tar(
+    name = "requirements_layer",
+    srcs = ["//:requirements_lock.txt"],
+    package_dir = "/app",
+)
+
+pkg_tar(
+    name = "core_layer",
+    srcs = ["//core"],
+    package_dir = "/app",
+)
+
+# --- NUEVO: Capa base sin secretos (para GCP) ---
+pkg_tar(
+    name = "scraper_job_base_layer",
+    srcs = glob(["**/*.py"]),
+    package_dir = "/app/scraper_job",
+)
+
+# --- NUEVO: Capa con secretos (para local) ---
+pkg_tar(
+    name = "scraper_job_local_layer",
+    srcs = glob(["**/*.py"]) + [
+        "biwenger-tools-sa.json",
+        ".env",
+    ],
+    package_dir = "/app/scraper_job",
+)
+
+# =================================================================
+# 4️⃣ IMÁGENES DOCKER (LOCAL Y GCP)
+# =================================================================
+
+# --- MODIFICADO: Imagen LOCAL con secretos ---
+oci_image(
+    name = "scraper_job_image_local",
+    base = "@python_base_image",
+    tars = [
+        ":requirements_layer",
+        ":core_layer",
+        ":scraper_job_local_layer", # <-- Usa la capa con secretos
+    ],
+    env = {
+        "PYTHONPATH": "/app",
+    },
+    entrypoint = [
+        "/bin/sh",
+        "-c",
+        "pip install --no-cache-dir -r /app/requirements_lock.txt && python -m scraper_job.get_messages",
+    ],
+)
+
+# --- MODIFICADO: Imagen GCP sin secretos ---
+oci_image(
+    name = "scraper_job_image_gcp", # <-- Renombrada para mayor claridad
+    base = "@python_base_image",
+    tars = [
+        ":requirements_layer",
+        ":core_layer",
+        ":scraper_job_base_layer", # <-- Usa la capa base limpia
+    ],
+    env = {
+        "PYTHONPATH": "/app",
+    },
+    entrypoint = [
+        "/bin/sh",
+        "-c",
+        "pip install --no-cache-dir -r /app/requirements_lock.txt && python -m scraper_job.get_messages",
+    ],
+)
+
+# =================================================================
+# 5️⃣ COMANDOS PARA DOCKER Y GCP
+# =================================================================
+
+# --- MODIFICADO: Ahora construye la imagen local ---
+oci_tarball(
+    name = "load_image_to_docker_local",
+    image = ":scraper_job_image_local", # <-- Apunta a la imagen local
+    repo_tags = ["bazel/scraper_job:local"],
+)
+
+# --- MODIFICADO: Ahora construye la imagen de GCP ---
+oci_push(
+    name = "push_image_to_gcp",
+    image = ":scraper_job_image_gcp", # <-- Apunta a la imagen de GCP
+    repository = "europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job",
+    remote_tags = ["latest"],
+)
+
+# =================================================================
+# 6️⃣ TESTS UNITARIOS (PYTEST)
+# =================================================================
+py_test(
+    name = "scraper_job_tests",
+    timeout = "short",
+    main = "tests/main.py",
+    srcs = glob(["tests/**/*.py"]),
+    deps = [
+        ":scraper_job_lib",
+        "//core",
+        "@pypi//pytest",
+        "@pypi//requests_mock",
+        "@pypi//freezegun",
+    ],
+)

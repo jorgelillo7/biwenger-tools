@@ -103,53 +103,58 @@ Aquí se describen los comandos para ejecutar cada componente
   * **Ejecutar en local:**
 
     ```bash
-      python3 -m scraper_job.get_messages
+        bazel run //scraper_job:scraper_job_local
+    ```
+
+  * **Tests:**
+
+    ```bash
+      # Ejecutar tests con Bazel (salida detallada)
+      bazel test //scraper_job:scraper_job_tests --test_output=all --test_arg=-v
+
+      # Forzar la ejecución de tests ignorando la caché
+      bazel test //scraper_job:scraper_job_tests --test_output=all --test_arg=-v --cache_test_results=no
+
+      # Ejecutar tests directamente con pytest (requiere venv activado)
+      pytest scraper_job/tests/
     ```
 
   * **Ejecutar con Docker localmente:**
 
     ```bash
-      docker build -t biwenger-scraper:latest -f scraper_job/Dockerfile .
-      docker run --rm biwenger-scraper:latest
+        # Cargar la imagen en Docker (con secretos locales incluidos)
+        bazel run //scraper_job:load_image_to_docker_local
+
+        # Iniciar el contenedor
+        docker run --rm bazel/scraper_job:local
     ```
 
-   * **Desplegar en producción:**
-      * **Construir y subir imagen Docker:**
-            ```bash
-            docker build --platform linux/amd64 -t europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job -f scraper_job/Dockerfile .
-            docker push europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job
-            ```
-      * **Crear Job (solo la primera vez):**
-          ```bash
+  * **Desplegar en producción (Cloud Run Job):**
+
+      * **Construir y subir la imagen a GCP:**
+        ```bash
+            bazel run //scraper_job:push_image_to_gcp --platforms=//platforms:linux_amd64
+        ```
+      * **Crear el Job (solo la primera vez):**
+        ```bash
           gcloud run jobs create biwenger-scraper-data \
               --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
               --region europe-southwest1 \
-              --set-secrets="/gdrive_client/client_secrets.json=client_secrets_json:latest" \
-              --set-secrets="/gdrive_token/token.json=token_json:latest" \
-              --set-secrets="/biwenger_email/biwenger-email=biwenger-email:latest" \
-              --set-secrets="/biwenger_password/biwenger-password=biwenger-password:latest" \
-              --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id:latest"
-          ```
-      * **Actualizar Job (nueva versión o secretos):**
-          ```bash
+              --set-secrets="/gdrive_sa/biwenger-tools-sa.json=biwenger-tools-sa-regional:latest" \
+              --set-secrets="/biwenger_email/biwenger-email=biwenger-email-regional:latest" \
+              --set-secrets="/biwenger_password/biwenger-password=biwenger-password-regional:latest" \
+              --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id-regional:latest"
+        ```
+      * **Actualizar el Job (al cambiar la imagen o los secretos):**
+        ```bash
           gcloud run jobs update biwenger-scraper-data \
               --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper_job \
               --region europe-southwest1
-          ```
-
-          ```bash
-          gcloud run jobs update biwenger-scraper-data \
-          --image europe-southwest1-docker.pkg.dev/biwenger-tools/biwenger-docker/scraper-job \
-          --region europe-southwest1 \
-          --set-secrets="/gdrive_sa/biwenger-tools-sa.json=biwenger-tools-sa-regional:latest" \
-          --set-secrets="/biwenger_email/biwenger-email=biwenger-email-regional:latest" \
-          --set-secrets="/biwenger_password/biwenger-password=biwenger-password-regional:latest" \
-          --set-secrets="/gdrive_folder_id/gdrive-folder-id=gdrive-folder-id-regional:latest"
-          ```
-      * **Ejecutar Job manualmente:**
-          ```bash
+        ```
+      * **Ejecutar el Job manualmente:**
+        ```bash
           gcloud run jobs execute biwenger-scraper-data --region europe-southwest1
-          ```
+        ```
 
 ### 3\. Teams Analyzer
 
