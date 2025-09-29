@@ -163,14 +163,26 @@ Aquí se describen los comandos para ejecutar cada componente
   * **Ejecutar en local:**
 
     ```bash
-      python3 -m teams_analyzer.teams_analyzer
+      bazel run //teams_analyzer:teams_analyzer_local
+    ```
+  * **Tests:**
+
+    ```bash
+      # Ejecutar tests con Bazel (salida detallada)
+      bazel test //teams_analyzer:teams_analyzer_tests --test_output=all --test_arg=-v --test_arg=teams_analyzer/tests/
+
+      # Forzar la ejecución de tests ignorando la caché
+      bazel test //teams_analyzer:teams_analyzer_tests --test_output=all --test_arg=-v --test_arg=teams_analyzer/tests/ --cache_test_results=no
+
+      # Ejecutar tests directamente con pytest (requiere venv activado)
+      pytest teams_analyzer/tests/
     ```
 
   * **Ejecutar con Docker localmente:**
 
     ```bash
-      docker build -t biwenger-teams-analyzer:latest -f teams_analyzer/Dockerfile .
-      docker run --rm --shm-size=2g biwenger-teams-analyzer:latest
+      bazel run //teams_analyzer:load_image_to_docker_local
+      docker run --rm --shm-size=2g bazel/teams_analyzer:local
     ```
   * **Desplegar en producción:**
     Pendiente

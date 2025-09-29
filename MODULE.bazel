@@ -33,3 +33,13 @@ oci.pull(
     ],
 )
 use_repo(oci, "python_base_image")
+
+oci.pull(
+    name = "debian_base_image",
+    image = "debian:bookworm-slim",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+    ],
+)
+use_repo(oci, "debian_base_image")
