@@ -5,9 +5,9 @@ import hashlib
 from unittest.mock import patch, MagicMock
 
 # Se actualizan las importaciones para que apunten al nuevo nombre de la carpeta
-from scraper_job.get_messages import main
-from scraper_job.logic.processing import get_all_board_messages
-from core.biwenger_client import BiwengerClient
+from packages.biwenger_tools.scraper_job.get_messages import main
+from packages.biwenger_tools.scraper_job.logic.processing import get_all_board_messages
+from core.sdk.biwenger import BiwengerClient
 
 # --- Fixture para mockear servicios externos en todos los tests del archivo ---
 
@@ -17,17 +17,21 @@ def mock_external_deps():
     """Fixture para mockear servicios externos como Drive y Biwenger."""
     # Las rutas de los patches se actualizan
     with patch(
-        "scraper_job.get_messages.read_secret_from_file", return_value="mock_secret"
-    ), patch("scraper_job.get_messages.get_google_service") as mock_gservice, patch(
-        "scraper_job.get_messages.BiwengerClient"
+        "packages.biwenger_tools.scraper_job.get_messages.read_secret_from_file",
+        return_value="mock_secret",
+    ), patch(
+        "packages.biwenger_tools.scraper_job.get_messages.get_google_service"
+    ) as mock_gservice, patch(
+        "packages.biwenger_tools.scraper_job.get_messages.BiwengerClient"
     ) as mock_biwenger_client, patch(
-        "scraper_job.get_messages.find_file_on_drive"
+        "packages.biwenger_tools.scraper_job.get_messages.find_file_on_drive"
     ) as mock_find_file, patch(
-        "scraper_job.get_messages.download_csv_as_dict"
+        "packages.biwenger_tools.scraper_job.get_messages.download_csv_as_dict"
     ) as mock_download_csv, patch(
-        "scraper_job.get_messages.upload_csv_to_drive"
+        "packages.biwenger_tools.scraper_job.get_messages.upload_csv_to_drive"
     ) as mock_upload_csv, patch(
-        "scraper_job.get_messages.os.path.exists", return_value=True
+        "packages.biwenger_tools.scraper_job.get_messages.os.path.exists",
+        return_value=True,
     ):
 
         mock_biwenger_instance = MagicMock()
@@ -85,7 +89,10 @@ def test_get_all_board_messages_multiple_pages(mock_external_deps):
 # --- Tests para la función principal (main) ---
 
 
-@patch("scraper_job.get_messages.os.path.exists", MagicMock(return_value=False))
+@patch(
+    "packages.biwenger_tools.scraper_job.get_messages.os.path.exists",
+    MagicMock(return_value=False),
+)
 def test_main_with_new_messages(mock_external_deps):
     """Prueba el flujo principal cuando se encuentran nuevos mensajes."""
     mock_external_deps["biwenger"].get_league_users.return_value = {123: "Jorge"}

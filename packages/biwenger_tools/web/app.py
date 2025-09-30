@@ -16,8 +16,8 @@ from flask import (
     jsonify,
 )
 
-from web import config
-from core.gcp_services import (
+from packages.biwenger_tools.web import config
+from core.sdk.gcp import (
     get_google_service,
     find_file_on_drive,
     download_csv_as_dict,

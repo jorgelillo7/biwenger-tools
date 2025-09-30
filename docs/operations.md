@@ -66,21 +66,21 @@ Aquí se describen los comandos para ejecutar cada componente
   * **Ejecutar en local (servidor de desarrollo):**
 
     ```bash
-      bazel run //web:web_dev_server
+      bazel run //packages/biwenger_tools/web:web_dev_server
     ```
   * **Tests:**
     ```
-      bazel test //web:web_tests --test_output=all --test_arg=-v
-      bazel test //web:web_tests --test_output=all --test_arg=-v --cache_test_results=no
+      bazel test //packages/biwenger_tools/web:web_tests --test_output=streamed --test_arg=-v
+      bazel test //packages/biwenger_tools/web:web_tests --test_output=streamed --test_arg=-v --cache_test_results=no
 
-      pytest web/tests/
+      pytest packages/biwenger_tools/web/tests/
     ```
 
   * **Ejecutar con Docker localmente:**
 
     ```bash
       # Cargar la imagen en Docker
-      bazel run //web:load_image_to_docker_local
+      bazel run //packages/biwenger_tools/web:load_image_to_docker_local
 
       # Iniciar el contenedor
       docker run --rm -p 8080:8080 bazel/web:local
@@ -92,38 +92,41 @@ Aquí se describen los comandos para ejecutar cada componente
 
     ```bash
       # Empaquetar y subir la imagen a GCP
-      bazel run //web:push_image_to_gcp --platforms=//platforms:linux_amd64
+      bazel run //packages/biwenger_tools/web:push_image_to_gcp --platforms=//platforms:linux_amd64
 
       # Ejecutar el script de despliegue
-      cd web
+      cd packages/biwenger_tools/web/
       ./deploy.sh
     ```
+
+    URL: https://biwenger-summary-pjpqofuevq-no.a.run.app/25-26/
+
 ### 2\. Scraper Job
 
   * **Ejecutar en local:**
 
     ```bash
-        bazel run //scraper_job:scraper_job_local
+        bazel run //packages/biwenger_tools/scraper_job:scraper_job_local
     ```
 
   * **Tests:**
 
     ```bash
       # Ejecutar tests con Bazel (salida detallada)
-      bazel test //scraper_job:scraper_job_tests --test_output=all --test_arg=-v
+      bazel test //packages/biwenger_tools/scraper_job:scraper_job_tests --test_output=streamed --test_arg=-v
 
       # Forzar la ejecución de tests ignorando la caché
-      bazel test //scraper_job:scraper_job_tests --test_output=all --test_arg=-v --cache_test_results=no
+      bazel test //packages/biwenger_tools/scraper_job:scraper_job_tests --test_output=streamed --test_arg=-v --cache_test_results=no
 
       # Ejecutar tests directamente con pytest (requiere venv activado)
-      pytest scraper_job/tests/
+      pytest packages/biwenger_tools/scraper_job/tests/
     ```
 
   * **Ejecutar con Docker localmente:**
 
     ```bash
         # Cargar la imagen en Docker (con secretos locales incluidos)
-        bazel run //scraper_job:load_image_to_docker_local
+        bazel run //packages/biwenger_tools/scraper_job:load_image_to_docker_local
 
         # Iniciar el contenedor
         docker run --rm bazel/scraper_job:local
@@ -133,7 +136,7 @@ Aquí se describen los comandos para ejecutar cada componente
 
       * **Construir y subir la imagen a GCP:**
         ```bash
-            bazel run //scraper_job:push_image_to_gcp --platforms=//platforms:linux_amd64
+            bazel run //packages/biwenger_tools/scraper_job:push_image_to_gcp --platforms=//platforms:linux_amd64
         ```
       * **Crear el Job (solo la primera vez):**
         ```bash
@@ -163,25 +166,32 @@ Aquí se describen los comandos para ejecutar cada componente
   * **Ejecutar en local:**
 
     ```bash
-      bazel run //teams_analyzer:teams_analyzer_local
+        bazel run //packages/biwenger_tools/teams_analyzer:teams_analyzer_local
+
+        #obtener los archivos para debug
+        bazel run --spawn_strategy=local //packages/biwenger_tools/teams_analyzer:teams_analyzer_local
+        open bazel-bin/packages/biwenger_tools/teams_analyzer/teams_analyzer_local.runfiles/_main/packages/biwenger_tools/teams_analyzer
+
+        analitica_fantasy_data_backup.csv
+        squads_export.csv
     ```
   * **Tests:**
 
     ```bash
       # Ejecutar tests con Bazel (salida detallada)
-      bazel test //teams_analyzer:teams_analyzer_tests --test_output=all --test_arg=-v --test_arg=teams_analyzer/tests/
+      bazel test //packages/biwenger_tools/teams_analyzer:teams_analyzer_tests --test_output=streamed --test_arg=-v
 
       # Forzar la ejecución de tests ignorando la caché
-      bazel test //teams_analyzer:teams_analyzer_tests --test_output=all --test_arg=-v --test_arg=teams_analyzer/tests/ --cache_test_results=no
+      bazel test //packages/biwenger_tools/teams_analyzer:teams_analyzer_tests --test_output=streamed --test_arg=-v --cache_test_results=no
 
       # Ejecutar tests directamente con pytest (requiere venv activado)
-      pytest teams_analyzer/tests/
+      pytest packages/biwenger_tools/teams_analyzer/tests/
     ```
 
   * **Ejecutar con Docker localmente:**
 
     ```bash
-      bazel run //teams_analyzer:load_image_to_docker_local
+      bazel run //packages/biwenger_tools/teams_analyzer:load_image_to_docker_local
       docker run --rm --shm-size=2g bazel/teams_analyzer:local
     ```
   * **Desplegar en producción:**
@@ -191,8 +201,8 @@ Aquí se describen los comandos para ejecutar cada componente
 
   * **Tests:**
     ```
-      bazel test //core:core_tests --test_output=all --test_arg=-v
-      bazel test //core:core_tests --test_output=all --test_arg=-v --cache_test_results=no
+      bazel test //core:core_tests --test_output=streamed --test_arg=-v
+      bazel test //core:core_tests --test_output=streamed --test_arg=-v --cache_test_results=no
 
       pytest core/tests/
     ```
@@ -402,6 +412,7 @@ Una vez configurado, VS Code te marcará errores y formateará tu código autom�
   * **Limpiar imágenes antiguas (script):**
 
     ```bash
+    cd scripts/
     ./clean-images-artifact.sh
     ```
 
@@ -410,6 +421,7 @@ Una vez configurado, VS Code te marcará errores y formateará tu código autom�
   * **Revisar costes (script):**
 
     ```bash
+    cd scripts/
     ./check-gcp-costs.sh
     ```
 

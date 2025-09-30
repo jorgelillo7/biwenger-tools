@@ -3,7 +3,7 @@ import requests_mock
 from unittest.mock import patch, mock_open
 import os
 import requests
-from core.telegram_notifier import send_telegram_notification
+from core.sdk.telegram import send_telegram_notification
 
 # Datos de prueba
 TEST_API_URL = "https://api.telegram.org/bot{token}/sendDocument"

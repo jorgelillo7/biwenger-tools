@@ -8,7 +8,11 @@ load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 # =================================================================
 py_library(
     name = "teams_analyzer_lib",
-    srcs = glob(["**/*.py"]),
+    srcs = glob(
+        ["**/*.py"],
+        # ✅ CORREGIDO: Excluimos los tests de la librería.
+        exclude = ["tests/**/*.py"],
+    ),
     deps = [
         "//core",
         "@pypi//python_dotenv",
@@ -55,7 +59,7 @@ pkg_tar(
         ".env",
         "biwenger-tools-sa.json",
     ],
-    package_dir = "/app/teams_analyzer",
+    package_dir = "/app/packages/biwenger_tools/teams_analyzer",
 )
 
 # =================================================================
@@ -87,7 +91,7 @@ oci_image(
         "pip3 install --no-cache-dir --break-system-packages -r /app/requirements_lock.txt && " +
         "echo 'Dependencias instaladas correctamente' && " +
         "echo 'Iniciando teams_analyzer...' && " +
-        "exec python3 -m teams_analyzer.teams_analyzer"
+        "exec python3 -m packages.biwenger_tools.teams_analyzer.teams_analyzer"
     ],
 )
 
@@ -105,7 +109,7 @@ oci_tarball(
 # =================================================================
 py_test(
     name = "teams_analyzer_tests",
-    args = ["teams_analyzer/tests/"],
+    args = ["packages/biwenger_tools/teams_analyzer/tests/"],
     timeout = "short",
     main = "tests/main.py",
     srcs = glob(["tests/**/*.py"]),

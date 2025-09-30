@@ -1,7 +1,7 @@
 import pytest
 import os
 from unittest.mock import patch, MagicMock
-from web.app import app
+from packages.biwenger_tools.web.app import app
 from flask import Flask
 
 # --- Configuración y Fixtures de Pytest ---
@@ -13,10 +13,11 @@ from flask import Flask
 def mock_google_services_init():
     """Mockea la inicialización de los servicios de Google en el arranque de la app."""
     # Mockeamos el os.path.exists para que devuelva True, simulando que el archivo existe
-    with patch("web.app.os.path.exists", return_value=True):
+    with patch("packages.biwenger_tools.web.app.os.path.exists", return_value=True):
         # Mockeamos la función que construye los servicios de Google
         with patch(
-            "web.app.get_google_service", MagicMock(return_value=MagicMock())
+            "packages.biwenger_tools.web.app.get_google_service",
+            MagicMock(return_value=MagicMock()),
         ) as mock_get_service:
             yield mock_get_service
 
@@ -123,8 +124,10 @@ def test_before_request_ignores_invalid_url(client):
 # --- Tests para las Rutas de Contenido ---
 
 
-@patch("web.app.download_csv_as_dict")
-@patch("web.app.find_file_on_drive", return_value={"id": "fake_id"})
+@patch("packages.biwenger_tools.web.app.download_csv_as_dict")
+@patch(
+    "packages.biwenger_tools.web.app.find_file_on_drive", return_value={"id": "fake_id"}
+)
 def test_comunicados_success(
     mock_find_file, mock_download_csv, client, mock_comunicados_data
 ):
@@ -137,7 +140,7 @@ def test_comunicados_success(
     assert b"D1" not in response.data  # Verifica que solo se muestran comunicados
 
 
-@patch("web.app.find_file_on_drive", return_value=None)
+@patch("packages.biwenger_tools.web.app.find_file_on_drive", return_value=None)
 def test_comunicados_file_not_found(mock_find_file, client):
     """Verifica que se muestra un error si el archivo no se encuentra."""
     response = client.get("/24-25/")
@@ -146,8 +149,13 @@ def test_comunicados_file_not_found(mock_find_file, client):
     assert b"Ocurri\xc3\xb3 un error" in response.data or b"error" in response.data
 
 
-@patch("web.app.download_csv_as_dict", side_effect=Exception("Test error"))
-@patch("web.app.find_file_on_drive", return_value={"id": "fake_id"})
+@patch(
+    "packages.biwenger_tools.web.app.download_csv_as_dict",
+    side_effect=Exception("Test error"),
+)
+@patch(
+    "packages.biwenger_tools.web.app.find_file_on_drive", return_value={"id": "fake_id"}
+)
 def test_comunicados_general_exception(mock_find_file, mock_download_csv, client):
     """Verifica que se muestra un error en caso de excepción general."""
     response = client.get("/24-25/")
@@ -155,8 +163,10 @@ def test_comunicados_general_exception(mock_find_file, mock_download_csv, client
     assert b"Ocurri\xc3\xb3 un error al cargar los comunicados" in response.data
 
 
-@patch("web.app.download_csv_as_dict")
-@patch("web.app.find_file_on_drive", return_value={"id": "fake_id"})
+@patch("packages.biwenger_tools.web.app.download_csv_as_dict")
+@patch(
+    "packages.biwenger_tools.web.app.find_file_on_drive", return_value={"id": "fake_id"}
+)
 def test_salseo_success(
     mock_find_file, mock_download_csv, client, mock_comunicados_data
 ):
@@ -169,8 +179,10 @@ def test_salseo_success(
     assert b"C1" not in response.data
 
 
-@patch("web.app.download_csv_as_dict")
-@patch("web.app.find_file_on_drive", return_value={"id": "fake_id"})
+@patch("packages.biwenger_tools.web.app.download_csv_as_dict")
+@patch(
+    "packages.biwenger_tools.web.app.find_file_on_drive", return_value={"id": "fake_id"}
+)
 def test_participacion_success(
     mock_find_file, mock_download_csv, client, mock_participacion_data
 ):
@@ -184,8 +196,10 @@ def test_participacion_success(
     assert b"Autor1" in response.data and b"3" in response.data
 
 
-@patch("web.app.download_csv_as_dict")
-@patch("web.app.find_file_on_drive", return_value={"id": "fake_id"})
+@patch("packages.biwenger_tools.web.app.download_csv_as_dict")
+@patch(
+    "packages.biwenger_tools.web.app.find_file_on_drive", return_value={"id": "fake_id"}
+)
 def test_palmares_success(
     mock_find_file, mock_download_csv, client, mock_palmares_data
 ):
@@ -199,7 +213,7 @@ def test_palmares_success(
     assert b"20" in response.data
 
 
-@patch("web.app.get_sheets_data")
+@patch("packages.biwenger_tools.web.app.get_sheets_data")
 def test_reglamento_success(mock_get_sheets, client, mock_ligas_data):
     """Verifica que la página de reglamento se carga con datos de las ligas."""
     mock_get_sheets.return_value = mock_ligas_data
@@ -212,7 +226,7 @@ def test_reglamento_success(mock_get_sheets, client, mock_ligas_data):
 # --- Tests para Endpoints API ---
 
 
-@patch("web.app.get_sheets_data")
+@patch("packages.biwenger_tools.web.app.get_sheets_data")
 def test_api_lloros_ligas_success(mock_get_sheets, client, mock_ligas_data):
     """Verifica que el endpoint de ligas devuelve JSON."""
     mock_get_sheets.return_value = mock_ligas_data
@@ -222,7 +236,7 @@ def test_api_lloros_ligas_success(mock_get_sheets, client, mock_ligas_data):
     assert response.get_json() == mock_ligas_data
 
 
-@patch("web.app.get_sheets_data")
+@patch("packages.biwenger_tools.web.app.get_sheets_data")
 def test_api_lloros_trofeos_success(mock_get_sheets, client, mock_trofeos_data):
     """Verifica que el endpoint de trofeos devuelve JSON."""
     mock_get_sheets.return_value = mock_trofeos_data
@@ -235,7 +249,7 @@ def test_api_lloros_trofeos_success(mock_get_sheets, client, mock_trofeos_data):
 # --- Tests para el Panel de Administración ---
 
 
-@patch("web.app.config.ADMIN_PASSWORD", "test_password")
+@patch("packages.biwenger_tools.web.app.config.ADMIN_PASSWORD", "test_password")
 def test_admin_login_get_page(client):
     """Verifica que la página de login de admin se carga correctamente."""
     response = client.get("/admin")
@@ -244,7 +258,7 @@ def test_admin_login_get_page(client):
     assert b"Acceso al VAR" in response.data
 
 
-@patch("web.app.config.ADMIN_PASSWORD", "test_password")
+@patch("packages.biwenger_tools.web.app.config.ADMIN_PASSWORD", "test_password")
 def test_admin_login_post_success(client):
     """Verifica que se puede iniciar sesión con la contraseña correcta."""
     response = client.post(
@@ -255,7 +269,7 @@ def test_admin_login_post_success(client):
         assert sess["admin_logged_in"] is True
 
 
-@patch("web.app.config.ADMIN_PASSWORD", "test_password")
+@patch("packages.biwenger_tools.web.app.config.ADMIN_PASSWORD", "test_password")
 def test_admin_login_post_fail(client):
     """Verifica que el login falla con una contraseña incorrecta."""
     response = client.post("/admin", data={"password": "wrong_password"})
@@ -264,7 +278,7 @@ def test_admin_login_post_fail(client):
         assert "admin_logged_in" not in sess
 
 
-@patch("web.app.get_file_metadata")
+@patch("packages.biwenger_tools.web.app.get_file_metadata")
 def test_admin_panel_page_loads(mock_get_metadata, client):
     """Verifica que el panel de admin se carga cuando el usuario está logeado."""
     # Simula un usuario logeado

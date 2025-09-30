@@ -8,8 +8,8 @@ from dateutil import parser
 from unittest.mock import MagicMock
 
 # Importaciones de tu código
-from core.biwenger_client import BiwengerClient
-from .test_constants import (
+from core.sdk.biwenger import BiwengerClient
+from .constants import (
     TEST_LOGIN_URL,
     TEST_ACCOUNT_URL,
     TEST_EMAIL,

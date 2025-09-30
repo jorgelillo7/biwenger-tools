@@ -4,18 +4,18 @@ import time
 import traceback
 from datetime import datetime
 
-from teams_analyzer import config
-from teams_analyzer.logic.scrapers import (
+from packages.biwenger_tools.teams_analyzer import config
+from packages.biwenger_tools.teams_analyzer.logic.scrapers import (
     fetch_jp_player_tips,
     fetch_analitica_fantasy_coeffs,
 )
-from teams_analyzer.logic.player_matching import (
+from packages.biwenger_tools.teams_analyzer.logic.player_matching import (
     find_player_match,
     normalize_name,
     map_position,
 )
-from core.biwenger_client import BiwengerClient
-from core.telegram_notifier import send_telegram_notification
+from core.sdk.biwenger import BiwengerClient
+from core.sdk.telegram import send_telegram_notification
 
 
 def main():

@@ -1,8 +1,8 @@
 import os
 import pytest
 from unittest.mock import patch, MagicMock, mock_open
-from teams_analyzer.teams_analyzer import main
-from teams_analyzer import config  # Importar el archivo config
+from packages.biwenger_tools.teams_analyzer.teams_analyzer import main
+from packages.biwenger_tools.teams_analyzer import config  # Importar el archivo config
 
 # Asegúrate de que los datos de Analitica Fantasy y Jugadores
 # estén en un formato que no cause errores.
@@ -17,9 +17,18 @@ mock_jp_data = {"player a": "muyRecomendable", "player b": "fondoDeArmario"}
 @pytest.fixture(autouse=True)
 def mock_config_module():
     with (
-        patch("teams_analyzer.config.TELEGRAM_BOT_TOKEN", "mock_token"),
-        patch("teams_analyzer.config.TELEGRAM_CHAT_ID", "mock_chat_id"),
-        patch("teams_analyzer.config.FINAL_REPORT_NAME", "squads_export.csv"),
+        patch(
+            "packages.biwenger_tools.teams_analyzer.config.TELEGRAM_BOT_TOKEN",
+            "mock_token",
+        ),
+        patch(
+            "packages.biwenger_tools.teams_analyzer.config.TELEGRAM_CHAT_ID",
+            "mock_chat_id",
+        ),
+        patch(
+            "packages.biwenger_tools.teams_analyzer.config.FINAL_REPORT_NAME",
+            "squads_export.csv",
+        ),
     ):
         yield
 
@@ -30,16 +39,22 @@ def mock_all_dependencies():
     Mocks all necessary dependencies for the main function.
     """
     with (
-        patch("teams_analyzer.teams_analyzer.BiwengerClient") as mock_biwenger_client,
         patch(
-            "teams_analyzer.teams_analyzer.fetch_analitica_fantasy_coeffs"
+            "packages.biwenger_tools.teams_analyzer.teams_analyzer.BiwengerClient"
+        ) as mock_biwenger_client,
+        patch(
+            "packages.biwenger_tools.teams_analyzer.teams_analyzer.fetch_analitica_fantasy_coeffs"
         ) as mock_fetch_af,
-        patch("teams_analyzer.teams_analyzer.fetch_jp_player_tips") as mock_fetch_jp,
-        patch("teams_analyzer.teams_analyzer.os.makedirs"),
-        patch("teams_analyzer.teams_analyzer.os.path.join") as mock_join,
+        patch(
+            "packages.biwenger_tools.teams_analyzer.teams_analyzer.fetch_jp_player_tips"
+        ) as mock_fetch_jp,
+        patch("packages.biwenger_tools.teams_analyzer.teams_analyzer.os.makedirs"),
+        patch(
+            "packages.biwenger_tools.teams_analyzer.teams_analyzer.os.path.join"
+        ) as mock_join,
         # Mock de send_telegram_notification para evitar errores reales
         patch(
-            "teams_analyzer.teams_analyzer.send_telegram_notification"
+            "packages.biwenger_tools.teams_analyzer.teams_analyzer.send_telegram_notification"
         ) as mock_telegram,
         patch("builtins.open", new_callable=mock_open) as mock_open_file,
     ):

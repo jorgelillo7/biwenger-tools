@@ -7,20 +7,20 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 
-from scraper_job import config
-from scraper_job.logic.processing import (
+from packages.biwenger_tools.scraper_job import config
+from packages.biwenger_tools.scraper_job.logic.processing import (
     categorize_title,
     process_participation,
     sort_messages,
     get_all_board_messages,
 )
-from core.gcp_services import (
+from core.sdk.gcp import (
     get_google_service,
     find_file_on_drive,
     download_csv_as_dict,
     upload_csv_to_drive,
 )
-from core.biwenger_client import BiwengerClient
+from core.sdk.biwenger import BiwengerClient
 from core.utils import read_secret_from_file
 
 

@@ -4,13 +4,13 @@ from datetime import datetime
 from freezegun import freeze_time
 
 # Se actualiza la importación a absoluta
-from scraper_job.logic.processing import (
+from packages.biwenger_tools.scraper_job.logic.processing import (
     categorize_title,
     process_participation,
     sort_messages,
     get_all_board_messages,
 )
-from core.biwenger_client import BiwengerClient
+from core.sdk.biwenger import BiwengerClient
 
 # --- Tests unitarios para las funciones de lógica ---
 

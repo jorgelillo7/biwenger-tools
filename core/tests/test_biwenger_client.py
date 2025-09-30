@@ -1,8 +1,8 @@
 import pytest
 import requests_mock
-from core.biwenger_client import BiwengerClient
+from core.sdk.biwenger import BiwengerClient
 
-from .test_constants import (
+from .constants import (
     TEST_LEAGUE_USERS_URL,
     TEST_PLAYERS_DATA_URL,
     TEST_MARKET_URL,

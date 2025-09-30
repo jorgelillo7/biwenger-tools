@@ -8,7 +8,11 @@ load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 # =================================================================
 py_library(
     name = "scraper_job_lib",
-    srcs = glob(["**/*.py"]),
+    srcs = glob(
+        ["**/*.py"],
+        # ✅ CORREGIDO: Excluimos los tests de la librería.
+        exclude = ["tests/**/*.py"],
+    ),
     deps = [
         "//core",
         "@pypi//unidecode",
@@ -50,7 +54,7 @@ pkg_tar(
 pkg_tar(
     name = "scraper_job_base_layer",
     srcs = glob(["**/*.py"]),
-    package_dir = "/app/scraper_job",
+    package_dir = "/app/packages/biwenger_tools/scraper_job",
 )
 
 # --- NUEVO: Capa con secretos (para local) ---
@@ -60,7 +64,7 @@ pkg_tar(
         "biwenger-tools-sa.json",
         ".env",
     ],
-    package_dir = "/app/scraper_job",
+    package_dir = "/app/packages/biwenger_tools/scraper_job",
 )
 
 # =================================================================
@@ -82,7 +86,7 @@ oci_image(
     entrypoint = [
         "/bin/sh",
         "-c",
-        "pip install --no-cache-dir -r /app/requirements_lock.txt && python -m scraper_job.get_messages",
+        "pip install --no-cache-dir -r /app/requirements_lock.txt && python -m packages.biwenger_tools.scraper_job.get_messages",
     ],
 )
 
@@ -101,7 +105,7 @@ oci_image(
     entrypoint = [
         "/bin/sh",
         "-c",
-        "pip install --no-cache-dir -r /app/requirements_lock.txt && python -m scraper_job.get_messages",
+        "pip install --no-cache-dir -r /app/requirements_lock.txt && python -m packages.biwenger_tools.scraper_job.get_messages",
     ],
 )
 

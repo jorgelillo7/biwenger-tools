@@ -16,6 +16,7 @@ PLAYER_NAME_MAPPINGS = {
     # Casos ambiguos que es mejor forzar
     "ricardo rodriguez": "r. rodriguez",  # Podría confundirse con otro Rodríguez
     "matias moreno": "m. moreno",
+    "vinicius jr": "vinicius jr.",
 }
 
 

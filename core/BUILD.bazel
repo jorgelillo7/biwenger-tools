@@ -4,7 +4,12 @@ load("@bazel-contrib_rules_python//python:defs.bzl", "py_library", "py_test")
 
 py_library(
     name = "core",
-    srcs = glob(["*.py"]),
+    srcs = glob(
+        ["**/*.py"],
+        # ✅ CAMBIO: Excluimos los tests de la librería para que no se "filtren"
+        # a otros targets que dependan de :core.
+        exclude = ["tests/**/*.py"],
+    ),
     deps = [
         "@pypi//requests",
         "@pypi//google_api_python_client",

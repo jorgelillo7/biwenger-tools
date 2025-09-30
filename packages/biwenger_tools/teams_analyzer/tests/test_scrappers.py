@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from unittest.mock import MagicMock, patch, Mock
 import pytest
-from teams_analyzer.logic.scrapers import (
+from packages.biwenger_tools.teams_analyzer.logic.scrapers import (
     create_chrome_driver,
     fetch_analitica_fantasy_coeffs,
 )
@@ -15,7 +15,9 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 @pytest.fixture(autouse=True)
 def mock_running_in_docker():
     """Mockea la variable RUNNING_IN_DOCKER para los tests."""
-    with patch("teams_analyzer.logic.scrapers.RUNNING_IN_DOCKER", False):
+    with patch(
+        "packages.biwenger_tools.teams_analyzer.logic.scrapers.RUNNING_IN_DOCKER", False
+    ):
         yield
 
 
@@ -27,15 +29,19 @@ def mock_selenium_driver():
     """
     mock_driver = MagicMock()
     with patch(
-        "teams_analyzer.logic.scrapers.create_chrome_driver", return_value=mock_driver
+        "packages.biwenger_tools.teams_analyzer.logic.scrapers.create_chrome_driver",
+        return_value=mock_driver,
     ):
         yield mock_driver
 
 
-@patch("teams_analyzer.logic.scrapers.tempfile.mkdtemp")
-@patch("teams_analyzer.logic.scrapers.os.path.exists", return_value=False)
-@patch("teams_analyzer.logic.scrapers.ChromeDriverManager")
-@patch("teams_analyzer.logic.scrapers.shutil.rmtree")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.tempfile.mkdtemp")
+@patch(
+    "packages.biwenger_tools.teams_analyzer.logic.scrapers.os.path.exists",
+    return_value=False,
+)
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.ChromeDriverManager")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.shutil.rmtree")
 def test_create_chrome_driver_local(
     mock_rmtree, mock_chrome_driver_manager, mock_exists, mock_mkdtemp
 ):
@@ -49,19 +55,26 @@ def test_create_chrome_driver_local(
     )
 
     with patch(
-        "teams_analyzer.logic.scrapers.webdriver.Chrome", return_value=mock_driver
+        "packages.biwenger_tools.teams_analyzer.logic.scrapers.webdriver.Chrome",
+        return_value=mock_driver,
     ):
-        with patch("teams_analyzer.logic.scrapers.RUNNING_IN_DOCKER", False):
+        with patch(
+            "packages.biwenger_tools.teams_analyzer.logic.scrapers.RUNNING_IN_DOCKER",
+            False,
+        ):
             driver = create_chrome_driver()
             assert driver == mock_driver
             mock_chrome_driver_manager.return_value.install.assert_called_once()
             mock_rmtree.assert_not_called()
 
 
-@patch("teams_analyzer.logic.scrapers.tempfile.mkdtemp")
-@patch("teams_analyzer.logic.scrapers.os.path.exists", return_value=True)
-@patch("teams_analyzer.logic.scrapers.webdriver.Chrome")
-@patch("teams_analyzer.logic.scrapers.shutil.rmtree")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.tempfile.mkdtemp")
+@patch(
+    "packages.biwenger_tools.teams_analyzer.logic.scrapers.os.path.exists",
+    return_value=True,
+)
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.webdriver.Chrome")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.shutil.rmtree")
 def test_create_chrome_driver_docker(
     mock_rmtree, mock_chrome, mock_exists, mock_mkdtemp
 ):
@@ -73,20 +86,22 @@ def test_create_chrome_driver_docker(
     mock_driver = MagicMock()
     mock_chrome.return_value = mock_driver
 
-    with patch("teams_analyzer.logic.scrapers.RUNNING_IN_DOCKER", True):
+    with patch(
+        "packages.biwenger_tools.teams_analyzer.logic.scrapers.RUNNING_IN_DOCKER", True
+    ):
         driver = create_chrome_driver()
         assert driver == mock_driver
         mock_chrome.assert_called_once()
         mock_rmtree.assert_called_once_with(mock_mkdtemp.return_value)
 
 
-@patch("teams_analyzer.logic.scrapers.WebDriverWait")
-@patch("teams_analyzer.logic.scrapers.By")
-@patch("teams_analyzer.logic.scrapers.create_chrome_driver")
-@patch("teams_analyzer.logic.scrapers.os.path.abspath")
-@patch("teams_analyzer.logic.scrapers.os.path.dirname")
-@patch("teams_analyzer.logic.scrapers.os.path.join")
-@patch("teams_analyzer.logic.scrapers.csv.writer")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.WebDriverWait")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.By")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.create_chrome_driver")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.os.path.abspath")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.os.path.dirname")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.os.path.join")
+@patch("packages.biwenger_tools.teams_analyzer.logic.scrapers.csv.writer")
 @patch("builtins.open")
 def test_fetch_analitica_fantasy_coeffs_success_with_pagination(
     mock_open,

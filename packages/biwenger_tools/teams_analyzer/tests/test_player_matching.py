@@ -1,5 +1,5 @@
 import pytest
-from teams_analyzer.logic.player_matching import (
+from packages.biwenger_tools.teams_analyzer.logic.player_matching import (
     normalize_name,
     find_player_match,
     map_position,
