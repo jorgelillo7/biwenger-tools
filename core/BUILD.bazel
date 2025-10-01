@@ -1,0 +1,35 @@
+# core/BUILD.bazel
+
+load("@bazel-contrib_rules_python//python:defs.bzl", "py_library", "py_test")
+
+py_library(
+    name = "core",
+    srcs = glob(
+        ["**/*.py"],
+        # ✅ CAMBIO: Excluimos los tests de la librería para que no se "filtren"
+        # a otros targets que dependan de :core.
+        exclude = ["tests/**/*.py"],
+    ),
+    deps = [
+        "@pypi//requests",
+        "@pypi//google_api_python_client",
+        "@pypi//google_auth_oauthlib",
+        "@pypi//google_auth",
+        "@pypi//pytz",
+        "@pypi//python_dateutil",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "core_tests",
+    timeout = "short",
+    main = "tests/main.py",
+    srcs = glob(["tests/**/*.py"]),
+    data = glob(["tests/data/*.json"]),
+    deps = [
+        ":core",
+        "@pypi//pytest",
+        "@pypi//requests_mock",
+    ],
+)

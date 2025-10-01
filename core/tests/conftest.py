@@ -8,26 +8,17 @@ from dateutil import parser
 from unittest.mock import MagicMock
 
 # Importaciones de tu código
-from core.biwenger_client import BiwengerClient
-
-# Configuraciones de prueba
-TEST_EMAIL = "test@example.com"
-TEST_PASSWORD = "password123"
-TEST_LEAGUE_ID = "123456"
-
-# URLs de prueba
-TEST_LOGIN_URL = "http://api.biwenger.com/login"
-TEST_ACCOUNT_URL = "http://api.biwenger.com/account"
-TEST_BOARD_URL = "http://api.biwenger.com/board_messages"
-TEST_LEAGUE_USERS_URL = "http://api.biwenger.com/league_users"
-TEST_PLAYERS_DATA_URL = "http://api.biwenger.com/players/data"
-TEST_MARKET_URL = "http://api.biwenger.com/market"
-TEST_MANAGER_SQUAD_URL_TEMPLATE = "http://api.biwenger.com/manager/{manager_id}/squad"
+from core.sdk.biwenger import BiwengerClient
+from .constants import (
+    TEST_LOGIN_URL,
+    TEST_ACCOUNT_URL,
+    TEST_EMAIL,
+    TEST_PASSWORD,
+    TEST_LEAGUE_ID,
+)
 
 
 # --- Fixtures compartidos y de utilidad ---
-
-
 @pytest.fixture
 def load_json_fixture():
     def _loader(filename):
